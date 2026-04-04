@@ -26,11 +26,18 @@
                 //workaround printf fix for older gcc compilers on Windows:
                 //"-D __USE_MINGW_ANSI_STDIO",
 
+
+                "${workspaceFolder}/../Common_Libs/CommonData.c",
+
                 "${fileDirname}/*.c",
                 
                 "-o",
                 "${fileDirname}/program",
                 
+                // Include Directories
+                "-I${workspaceFolder}",
+                "-I${workspaceFolder}/../Common_Libs",
+
                 //link math lib:
                 "-lm",
 
