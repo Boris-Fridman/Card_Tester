@@ -1,0 +1,49 @@
+
+AI Overview
+To use SQL in C on a Linux environment, you typically interact with a database through a C-specific API provided by the database vendor or a standard interface like ODBC. 
+1. Database-Specific C APIs
+Most popular databases provide a native C library (often called a "connector" or "driver") that you include in your project. 
+SQLite: The simplest option for local storage as it is serverless and stored in a single file.
+Install: sudo apt install libsqlite3-dev
+Header: #include <sqlite3.h>
+Compilation: Link with -lsqlite3 (e.g., gcc main.c -lsqlite3).
+MySQL / MariaDB: Requires a running server.
+Install: sudo apt install libmysqlclient-dev
+Header: #include <mysql/mysql.h>
+Compilation: Link with -lmysqlclient.
+PostgreSQL:
+Install: sudo apt install libpq-dev
+Header: #include <postgresql/libpq-fe.h>
+Compilation: Link with -lpq. 
+YouTube
+YouTube
+ +4
+2. Standardized Interfaces (ODBC)
+If you need your C code to be portable across different databases (e.g., switching from MySQL to SQL Server), use ODBC (Open Database Connectivity). 
+Stack Overflow
+Stack Overflow
+ +1
+Library: unixODBC is the standard manager for Linux.
+Usage: You use SQLAllocHandle, SQLDriverConnect, and SQLExecDirect to manage connections and execute queries.
+Example for SQL Server: Microsoft provides a specific ODBC Driver for SQL Server on Linux. 
+3. Embedded SQL (ESQL/C) 
+Some systems (like PostgreSQL and IBM DB2) support Embedded SQL, where you write SQL statements directly inside your C code prefixed with EXEC SQL. 
+Mimer Information Technology
+Mimer Information Technology
+ +1
+Preprocessor: A tool like ecpg (for PostgreSQL) converts these statements into standard C function calls before compilation.
+Example Syntax: EXEC SQL SELECT name INTO :var FROM users WHERE id = 1;. 
+Die.net
+Die.net
+ +1
+Summary Table: Tools and Commands
+Database 	Library Package (Ubuntu/Debian)	Linker Flag	Primary Header
+SQLite	libsqlite3-dev	-lsqlite3	sqlite3.h
+MySQL	libmysqlclient-dev	-lmysqlclient	mysql/mysql.h
+PostgreSQL	libpq-dev	-lpq	libpq-fe.h
+ODBC	unixodbc-dev	-lodbc	sql.h, sqlext.h
+Basic Workflow
+Initialize: Call the library's init/connection function (e.g., mysql_init or sqlite3_open).
+Execute: Pass your SQL string to an execution function (e.g., sqlite3_exec or mysql_query).
+Fetch: Loop through the results using a "fetch" function to retrieve rows.
+Cleanup: Close the connection and free allocated memory to prevent leaks. 

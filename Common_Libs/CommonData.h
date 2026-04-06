@@ -37,7 +37,7 @@ typedef struct PeriphBitField_s
   uint8_t Reserved  : 3;
  }PeriphBitField_s;
 
-typedef struct __attribute__((packed)) TestData_s // The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending.
+ typedef struct __attribute__((packed)) TestData_s // The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending.
  {
   uint32_t Test_ID;
   PeriphBitField_s Periph_B_F;
