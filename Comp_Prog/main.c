@@ -3,28 +3,41 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sqlite3.h>
+#include <libgen.h>
 #include "CommonData.h"
     
 
 
-void PrinthelpMessage();
-
+void PrinthelpMessage(char *ProgName);
+int CheckArgs(int argc, char *argv[], int *NInt, PeriphBitField_s *BFResult);
+int CreateLoadDatabase();
 
 int main(int argc, char *argv[])
  {
-    //ansi clear screen
-    printf("\033[2J\033[H");
-    
-    //code
-    printf("printing arguments...\n\r");
-    int i;
-    for(i = 0; i < argc; i++)
-     {
-      printf("%3d: %s\r\n", i, argv[i]);
-     }
+  int NInt;
+  int ArgResult;
 
-    
-    return 0;
+  PeriphBitField_s PeriphBF;
+
+  //ansi clear screen
+  printf("\033[2J\033[H");
+  
+  //code
+  printf("printing arguments...\n\r");
+  int i;
+  for(i = 0; i < argc; i++)
+   {
+    printf("%3d: %s\r\n", i, argv[i]);
+   }
+  
+  ArgResult = CheckArgs(argc, argv, &NInt, &PeriphBF);
+  if(ArgResult == 0)
+   {
+    CreateLoadDatabase();
+
+   }
+
+  return 0;
  }
 
 int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
@@ -35,35 +48,41 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
   int nintres;
   bool nintloaded = false;
   
-  for(i = 0; i < argc; i++)
+  for(i = 1; i < argc; i++)
    {
     st = argv[i];
-    for(j = 0; j < strlen(st); j++)
+    if(st[0] == 'n')
      {
-      ch = st[j];
-      switch(ch)
+      nintres = sscanf(&st[1], "%d", NInt);
+      nintloaded |= (nintres != EOF);
+     }
+    else
+     {
+      for(j = 0; j < strlen(st); j++)
        {
-         case 't':
-           BFResult->Timer = 1;
-          break;
-         case 'u':
-           BFResult->UART = 1;
-          break;
-         case 's':
-           BFResult->SPI = 1;
-          break;
-         case 'i':
-           BFResult->I2c = 1;
-          break;
-         case 'a':
-           BFResult->ADC = 1;
-          break;
-         case 'n':
-           nintres = sscanf(&st[j], "%d", NInt);
-           nintloaded |= (nintres != EOF);
-          break;
-         case 'h':         
-          break;
+        ch = st[j];
+        switch(ch)
+         {
+           case 't':
+             BFResult->Timer = 1;
+            break;
+           case 'u':
+             BFResult->UART = 1;
+            break;
+           case 's':
+             BFResult->SPI = 1;
+            break;
+           case 'i':
+             BFResult->I2c = 1;
+            break;
+           case 'a':
+             BFResult->ADC = 1;
+            break;
+           case 'h':     
+             PrinthelpMessage(argv[0]);
+             return 1;
+            break;
+         }
        }
      }
    }
@@ -74,16 +93,18 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
     else
      fprintf(stderr, "Was not loaded.");
     fprintf(stderr, "Using default number inteructions that is \"1\"\n\r");
-    *NInt = 1;
+    *NInt = -1;
    }            
 
   return 0;
  }
 
-void PrinthelpMessage()
+void PrinthelpMessage(char *ProgName)
  {
+  //UNUSED(ProgName);
+  char *fname = basename(ProgName);
   printf("To use the program it's needed to type the next parameters:\n\r");
-  printf("<filename> [test [t][u][s][i][a][r]] [n] \n\r");
+  printf("%s [test [t][u][s][i][a][r]] [n] \n\r", fname);
   printf("t  - Timer\n\r");
   printf("u  - UART/USART\n\r");
   printf("s  - SPI\n\r");
@@ -93,3 +114,21 @@ void PrinthelpMessage()
   printf("Or to type h to see the help message.\n\r");
  }
 
+int CreateLoadDatabase()
+ {
+  sqlite3 *db;
+  int rc;
+  rc = sqlite3_open("tests.sqlite3", &db);
+  if(rc!=SQLITE_OK)
+   {
+    fprintf(stderr, "Cannot open database: %s\n\r", sqlite3_errmsg(db));
+    return 1;
+   }
+  else
+   {
+    char *err_msg;
+    rc = sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS TESTS_RESULTS(test_id INT, date_time TEXT, test_result INT);", 0, 0, &err_msg);
+    sqlite3_close(db);
+    return 0;
+   }
+ }

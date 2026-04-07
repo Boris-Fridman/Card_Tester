@@ -23,8 +23,6 @@
                 "-Wall",
                 "-Wextra",
                 
-                //implementing database:
-                "-lsqlite3",
 
 
                 //workaround printf fix for older gcc compilers on Windows:
@@ -34,6 +32,9 @@
                 "${workspaceFolder}/../Common_Libs/CommonData.c",
 
                 "${fileDirname}/*.c",
+                // "sqlite3.c",
+                // "-lpthread",
+                // "-ldl",
                 
                 "-o",
                 "${fileDirname}/program",
@@ -44,6 +45,9 @@
 
                 //link math lib:
                 "-lm",
+                
+                //implementing database:
+                "-lsqlite3",
 
             ],
             "options": {
