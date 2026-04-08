@@ -5,33 +5,36 @@
 #include <sqlite3.h>
 #include <libgen.h>
 #include <time.h>
-#include <pthread.h>
 #include "CommonData.h"
+#include "DataBase.h"
+#include "Network.h"
     
-
 
 void PrinthelpMessage(char *ProgName);
 int CheckArgs(int argc, char *argv[], int *NInt, PeriphBitField_s *BFResult);
-int CreateLoadDatabase(sqlite3 **conn);
-int GetLastTestIDFromDataBase(sqlite3 **conn);
-int WriteToDataBase(sqlite3 **conn, int test_id, char date_time[], bool result);
+void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, int NInt, int TestID);
+void ConvertTime(time_t const * const TimeToConvert, char TimeAsStr[], size_t TimeStrSize);
 
 int main(int argc, char *argv[])
  {
   int NInt;
   int ArgResult;
-  int test_id;
+  int TestID;
   sqlite3 *conn;
-  time_t current_time; 
-  struct tm tmp;
+  time_t CurrentTime; 
   char timebuf[100];
-
   PeriphBitField_s PeriphBF;
+  TestResult_s ResultData;
+  uint32_t TimeOut;
+
+  TestData_s TestData;
+  uint8_t TestPattern[MAX_TEST_PATTERN_SIZE] = {0};
 
   //ansi clear screen
   printf("\033[2J\033[H");
   
   //code
+  srand(time(NULL));
   printf("printing arguments...\n\r");
   int i;
   for(i = 0; i < argc; i++)
@@ -43,13 +46,18 @@ int main(int argc, char *argv[])
   if(ArgResult == 0)
    {
     CreateLoadDatabase(&conn); // Yes, the given pointer to database must be given as pointer to pointer to database because it's address is updated in this function.
-    test_id = GetLastTestIDFromDataBase(&conn);
+    TestID = GetLastTestIDFromDataBase(&conn);
+    TestID++;
 
-    time(&current_time);
-    localtime_r(&current_time, &tmp);
-    strftime(timebuf,sizeof(timebuf), "%G/%m/%d - %H:%M:%S", &tmp);
+    time(&CurrentTime);
+    ConvertTime(&CurrentTime, timebuf,sizeof(timebuf));
 
-    WriteToDataBase(&conn, test_id + 1, timebuf, true);
+    PrepereData(&TestData, TestPattern, &TimeOut, PeriphBF, NInt, TestID);
+
+    SendCommandToNetwork(&TestData, TestPattern);
+    WaitForResponse(&ResultData, TimeOut);
+
+    WriteToDataBase(&conn, ResultData.Test_ID, timebuf, ResultData.TestResult);
    }
 
   return 0;
@@ -129,76 +137,60 @@ void PrinthelpMessage(char *ProgName)
   printf("Or to type h to see the help message.\n\r");
  }
 
-int CreateLoadDatabase(sqlite3 **conn)
+
+void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, int NInt, int TestID)
  {
-  int result;
-  if(*conn == NULL)
-   return -2;  // The pointer to the database wasn't given.
-  result = sqlite3_open("tests.sqlite3", conn);
-  if(result!=SQLITE_OK)
+  uint32_t MinFreq, MaxAddDelay = 0;
+
+  MaxAddDelay = 0;
+  if((PeriphBF.I2c)||(PeriphBF.SPI)||(PeriphBF.UART))
    {
-    fprintf(stderr, "Cannot open database: %s\n\r", sqlite3_errmsg(*conn));
-    return -1;  // Couldn't create the database.
+    MinFreq = MAX_POSSIBLE_FREAUENCY;
+    if(PeriphBF.I2c)   MinFreq = MIN(MinFreq, MIN_I2C_FREQUENCY);
+    if(PeriphBF.SPI)   MinFreq = MIN(MinFreq, MIN_SPI_FREQUENCY);
+    if(PeriphBF.UART)  MinFreq = MIN(MinFreq, MIN_UART_FREQUENCY);
+    MaxAddDelay += 1000 * TestData->Bit_Pattern_Length * 8 / MinFreq;
+    TestData->Bit_Pattern_Length = rand() % MAX_TEST_PATTERN_SIZE;  // Determining Test Pattern Length randomly but less than Maximum permitted length.
+    for(uint8_t i = 0; i< TestData->Bit_Pattern_Length; i++)
+     {
+      TestPattern[i] = rand() % 256;
+     }
    }
   else
    {
-    char *err_msg;
-    result = sqlite3_exec(*conn, "CREATE TABLE IF NOT EXISTS TESTS_RESULTS(test_id INT, date_time TEXT, test_result INT);", 0, 0, &err_msg);
-    sqlite3_close(*conn);
-    return 0; // The database was loaded successfully.
+    TestData->Bit_Pattern_Length = 0;
    }
- }
-
-int GetLastTestIDFromDataBase(sqlite3 **conn)
- {
-  int result, valtoret = 0;
-  sqlite3_stmt* stmt;
-
-  result = sqlite3_open("tests.sqlite3", conn);
-
-  result = sqlite3_prepare_v2(*conn, "SELECT test_id FROM TESTS_RESULTS;", -1, &stmt, 0);
-
-  do
+   
+  if(PeriphBF.Timer)
    {
-    result = sqlite3_step(stmt);
-    if(result == SQLITE_ROW)
-    valtoret = sqlite3_column_int(stmt,0);
+    TestData->TestTime = rand() % (1000);    // In ms
+    MaxAddDelay += TestData->TestTime;
    }
-  while(result == SQLITE_ROW);
-  sqlite3_close(*conn);
-  return valtoret;
+  else
+   {
+    TestData->TestTime = 0;
+   }
+  if(PeriphBF.ADC)
+   {
+    TestData->TestVoltage = rand() % (5000); // In mV
+   }
+  else
+   {
+    TestData->TestVoltage = 0;
+   }
+  TestData->Num_Interations = NInt;
+  TestData->Periph_B_F = PeriphBF;
+  TestData->Test_ID = TestID;
+  TestData->TestVoltage = rand() % (5000); // In mV
+  TimeOut = MIN_TIME_OUT + MaxAddDelay;
+
  }
 
- int WriteToDataBase(sqlite3 **conn, int test_id, char date_time[], bool test_result)
-  {
-   char *err_msg;
-   char *resstring[] = {"Fail", "Pass"};
-   int result, valtoret = 0;
-   //char buf[500];
-   sqlite3_stmt* stmt = NULL;
-
-   result = sqlite3_open("tests.sqlite3", conn);
-
-   result = sqlite3_prepare_v2(*conn, "INSERT INTO TESTS_RESULTS (test_id, date_time, test_result) VALUES (?, ?, ?);", -1, &stmt, 0);
-
-   result = sqlite3_bind_int (stmt, 1, test_id                     );
-   result = sqlite3_bind_text(stmt, 2, date_time, -1, SQLITE_STATIC);
-   result = sqlite3_bind_int (stmt, 3, test_result                 );
-
-  //  snprintf(buf, sizeof(buf)-1, "INSERT INTO TESTS_RESULTS(test_id) VALUES(%d);"
-  //                               "INSERT INTO TESTS_RESULTS(date_time) VALUES(%s);"
-  //                               "INSERT INTO TESTS_RESULTS(test_result) VALUES(%d);",
-  //           test_id, date_time,(int)test_result);
+void ConvertTime(time_t const * const TimeToConvert, char TimeAsStr[], size_t TimeStrSize)
+ {
+  struct tm tmp;
+  localtime_r(TimeToConvert, &tmp);
+  strftime(TimeAsStr, TimeStrSize, "%G/%m/%d - %H:%M:%S", &tmp);  
+ }
 
 
-  //  snprintf(buf, sizeof(buf)-1, "INSERT INTO TESTS_RESULTS(test_id, date_time, test_result) VALUES(%d, %s, %d);",
-  //           test_id, date_time,(int)test_result);
-
-  // result = sqlite3_exec(*conn, buf, 0, 0, &err_msg);
-
-  sqlite3_step(stmt);
-  result = sqlite3_finalize(stmt);
-
-  sqlite3_close(*conn);
-  return valtoret;
-  }
