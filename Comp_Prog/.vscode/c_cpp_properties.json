@@ -6,7 +6,7 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../Common_Libs"
             ],
-            "defines": [],
+            "defines": ["_POSIX_C_SOURCE = 1"],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++17",

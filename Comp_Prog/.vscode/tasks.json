@@ -27,7 +27,7 @@
 
                 //workaround printf fix for older gcc compilers on Windows:
                 //"-D __USE_MINGW_ANSI_STDIO",
-
+                "-D_POSIX_C_SOURCE = 1",
 
                 "${workspaceFolder}/../Common_Libs/CommonData.c",
 
@@ -37,7 +37,7 @@
                 // "-ldl",
                 
                 "-o",
-                "${fileDirname}/program",
+                "${fileDirname}/testcard",
                 
                 // Include Directories
                 "-I${workspaceFolder}",
@@ -45,7 +45,7 @@
 
                 //link math lib:
                 "-lm",
-                
+
                 //implementing database:
                 "-lsqlite3",
 
