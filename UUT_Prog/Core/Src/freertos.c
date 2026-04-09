@@ -25,7 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "netif.h"
+#include "CommonData.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -124,6 +125,11 @@ void StartDefaultTask(void const * argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN StartDefaultTask */
+  extern struct netif gnetif;
+  netif_set_hostname(&gnetif, HOST_NAME);
+  //netif_set_hostname(&gnetif, "MyCustomHostname");
+  //netif->hostname = "STM32-Device";
+
   /* Infinite loop */
   for(;;)
   {
