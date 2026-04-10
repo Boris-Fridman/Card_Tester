@@ -72,7 +72,7 @@
 /*----- Default Value for LWIP_NETIF_HOSTNAME: 0 ---*/
 #define LWIP_NETIF_HOSTNAME 1
 /*----- Default Value for LWIP_NETIF_HOSTNAME_NAME: lwip ---*/
-#define LWIP_NETIF_HOSTNAME_NAME lwip_test
+#define LWIP_NETIF_HOSTNAME_NAME STM32-Device
 /*----- Value in opt.h for LWIP_NETIF_LINK_CALLBACK: 0 -----*/
 #define LWIP_NETIF_LINK_CALLBACK 1
 /*----- Value in opt.h for TCPIP_THREAD_STACKSIZE: 0 -----*/

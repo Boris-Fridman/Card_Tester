@@ -123,7 +123,12 @@ int main(void)
   MX_I2C2_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-
+#ifdef DEBUG
+  __HAL_DBGMCU_FREEZE_TIM6();  // Prevents jumping to the timer handler during stepping in debugging.
+  __HAL_DBGMCU_FREEZE_TIM1();  // Prevents jumping to the timer handler during stepping in debugging.
+  __HAL_DBGMCU_FREEZE_TIM2();  // Prevents jumping to the timer handler during stepping in debugging.
+  //__HAL_FREEZE_ETH_DBGMCU();   // Prevents jumping to the timer handler during stepping in debugging.
+#endif
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */

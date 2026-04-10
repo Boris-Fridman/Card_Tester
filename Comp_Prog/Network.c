@@ -41,7 +41,7 @@ int InitNetwork()
   memcpy(&dest_addr.sin_addr, host->h_addr_list[0], host->h_length);
 
   //dest_addr.sin_addr.s_addr = inet_addr(DESTIN_IP);  // Is used in case the address is known.
-  
+
   return 0;
  }
 
@@ -68,12 +68,13 @@ int SendCommandToNetwork(TestData_s *TestData, uint8_t TestPattern[])
    {
     memcpy(Pack, TestData, sizeof(TestData_s));
     memcpy(Pack + sizeof(TestData_s), TestPattern, TestData->Bit_Pattern_Length);
-    FindCRC(Pack, PackSizeNetto, DEF_INIT_VAL);
+    CRC = FindCRC(Pack, PackSizeNetto, DEF_INIT_VAL);
+    memcpy(Pack + PackSizeNetto, &CRC, sizeof(CRC));
     result = sendto(sockfd, Pack, PackSizeFull, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
-    if(result < 0)
-     {
-      fprintf(stderr, "Problem in sending.\n\r");
-     }
+    if(result >= 0 )
+     printf("The message was sent successfully.  %ld bytes were sent.\n", result);
+    else
+     printf("Error in sending.\n");
     free(Pack);
    }
   else
@@ -86,11 +87,11 @@ int SendCommandToNetwork(TestData_s *TestData, uint8_t TestPattern[])
 
 int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
  {
-  int r;
-  ResultData->Periph_B_F = Periph_B_F;
-  ResultData->Test_ID = TestID;
-  r = rand();
-  ResultData->TestResult = (r % 2) ? E_TEST_SUCCEEDED : E_TEST_FAILED;
+  int r;                                                               // Defined for test only. Will be removed.
+  ResultData->Periph_B_F = Periph_B_F;                                 // Defined for test only. Will be removed.
+  ResultData->Test_ID = TestID;                                        // Defined for test only. Will be removed.
+  r = rand();                                                          // Defined for test only. Will be removed.
+  ResultData->TestResult = (r % 2) ? E_TEST_SUCCEEDED : E_TEST_FAILED; // Defined for test only. Will be removed.
   
   return 0;
  }
