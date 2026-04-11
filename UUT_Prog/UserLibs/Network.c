@@ -21,7 +21,7 @@
 
 
 #define xNETWORK_PRIORITY 0
-#define xNETWORK_STACK_SIZE MAX(configMINIMAL_STACK_SIZE, 512)
+#define xNETWORK_STACK_SIZE MAX(configMINIMAL_STACK_SIZE, 1024)
 
 
 
@@ -31,7 +31,7 @@ TaskHandle_t xNewtworkTaskHandle;      // Handle to network task.
 void NetworkTask(void *pvParameters);
 void Wait_for_DHCP(void);
 void DecodeData(uint8_t Data[], size_t Len);
-
+void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, TestResult_s TestResult);
 
 
 void NetworkInit()
@@ -40,7 +40,7 @@ void NetworkInit()
   result = xTaskCreate(NetworkTask, "Network Task", xNETWORK_STACK_SIZE, NULL, xNETWORK_PRIORITY, &xNewtworkTaskHandle);
   if(result != pdPASS)
    {
-	printf("\n\rThe network task couldn't be created. \n\r");
+	printf("\n\r%sThe network task couldn't be created.%s\n\r", TermRed, TermColorsReset);
 	//for(;;);
    }
 
@@ -55,11 +55,13 @@ void NetworkTask(void *pvParameters)
   void *data;
   uint16_t len;
   char *ip_str;
+  ip_addr_t addr;
+  uint16_t port;
   extern struct netif gnetif;
   struct netif *netif = &gnetif;
   ip4_addr_t const *remote_ip;
   err_t error;
-  char *msg = "Hello from STM32 UDP Client";
+//  char *msg = "Hello from STM32 UDP Client";
 
   Wait_for_DHCP();
   netif_set_hostname(&gnetif, HOST_NAME);
@@ -73,38 +75,39 @@ void NetworkTask(void *pvParameters)
    {
     error = netconn_bind(conn, NULL, DESTIN_PORT);
 
-    //error = netconn_connect(conn, remote_ip, DESTIN_PORT);
     if(error == ERR_OK)
      {
       for(;;)
        {
-
-//        buf = netbuf_new();
-//        netbuf_ref(buf, msg, strlen(msg));
-//        netconn_send(conn, buf);
-//        netbuf_delete(buf); // Free buffer after sending
-
         error = netconn_recv(conn, &buf);
         if (error == ERR_OK)
          {
           // Process received data in buf->p->payload
+
           netbuf_data(buf, &data, &len);
+          ip_str = ip4addr_ntoa(&buf->addr);
+          addr = buf->addr;
+          port = buf->port;
+          printf("%sReceived data from %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
           DecodeData(data, len);
           netbuf_delete(buf);
+
+          TestResult_s TestResult = { .Test_ID = 20, .TestResult =  E_TEST_SUCCEEDED}; // Defiend temperary. will be moved to other place.
+          SendResponse(conn, &addr, port, TestResult);                       // Defined here temperary. Will be moved to other place.
+
          }
 
-
-//        netconn_recv(conn, &buf);
-//        netbuf_data(buf, &data, &len);
         vTaskDelay(pdMS_TO_TICKS(1));
        }
      }
    }
   else
    {
-    printf("\n\rThe connection couldn't be established.\n\r");
+    printf("\n\r%sThe connection couldn't be established.%s\n\r", TermRed, TermColorsReset);
+    netconn_delete(conn);
     //for(;;);
    }
+
   vTaskDelete(NULL);
  }
 
@@ -153,3 +156,34 @@ void DecodeData(uint8_t Data[], size_t Len)
 
  }
 
+
+void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, TestResult_s TestResult)
+ {
+  err_t error;
+  struct netbuf *buf;
+  char *ip_str;
+  uint16_t port;
+  uint8_t *Pack;
+  uint32_t CalcCRC;
+
+  Pack = calloc(sizeof(TestResult_s)+sizeof(uint32_t), sizeof(uint8_t));
+  if(Pack)
+   {
+
+    memcpy(Pack, &TestResult, sizeof(TestResult_s));
+    CalcCRC = FindCRC(Pack, sizeof(TestResult_s), DEF_INIT_VAL);
+    memcpy(Pack + sizeof(TestResult_s), &CalcCRC, sizeof(uint32_t));
+
+    buf = netbuf_new();
+    netbuf_ref(buf, Pack, sizeof(TestResult_s) + sizeof(uint32_t));
+    netconn_sendto(conn, buf, ip4addr, ipport);
+    netbuf_delete(buf); // Free buffer after sending
+    ip_str = ip4addr_ntoa(ip4addr);
+    port = ipport;
+    printf("%sThe response was sent to %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
+
+    free(Pack);
+   }
+
+
+ }

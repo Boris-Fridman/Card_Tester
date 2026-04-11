@@ -81,7 +81,6 @@ void MX_LWIP_Init(void)
 /* USER CODE END H7_OS_THREAD_DEF_CREATE_CMSIS_RTOS_V1 */
 
   /* Start DHCP negotiation for a network interface (IPv4) */
-  netif_set_hostname(&gnetif, HOST_NAME);
   dhcp_start(&gnetif);
 
 /* USER CODE BEGIN 3 */

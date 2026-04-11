@@ -5,11 +5,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * Terminal Colors
+ */
+
+#define TermRed           "\033[31m"
+#define TermGreen         "\033[32m"
+#define TermYello         "\033[33m"
+#define TermBlue          "\033[34m"
+#define TermMagenta       "\033[35m"
+#define TermCyan          "\033[36m"
+
+#define TermColorsReset   "\033[39;49m"
+
+
+/*
+ * Min / Max macros
+ */
 
 #define MAX(X, Y) ( (X) > (Y) ? (X) : (Y) )           /* The macro returning the biggest from the two values.  */
 #define MIN(X, Y) ( (X) < (Y) ? (X) : (Y) )           /* The macro returning the smallest from the two values. */
 
 
+/*
+ * Test data definitions
+ */
 
 #define MAX_TEST_PATTERN_SIZE   100                       /* Maximum permitted Length of pattern. */
 #define MIN_TIME_OUT            1000        /* ms  */     /* Minimal timeout to wait for response. */
@@ -19,13 +39,18 @@
 #define MIN_SPI_FREQUENCY       200000      /* Hz */
 #define MIN_UART_FREQUENCY      50000       /* Hz */
 
-/* Internet information for sending and receiving call-events. */
-#define HOST_NAME    "CardTester"
-#define DESTIN_IP    "192.168.1.113"         /* Server IP address to which are sent the call messages. */
-#define DESTIN_PORT   8080                   /* Server port to which are sent the call messages. */
-#define BUFFER_SIZE   1024                   /* The length in bytes, of the buffer pointed by the buf paramter that is used by the recvfrom() function. */
+/*
+ * Internet information for sending and receiving call-events.
+ */
+#define HOST_NAME              "CardTester"
+#define DESTIN_IP              "192.168.1.113"         /* Server IP address to which are sent the call messages. */
+#define DESTIN_PORT             8080                   /* Server port to which are sent the call messages. */
+#define BUFFER_SIZE             1024                   /* The length in bytes, of the buffer pointed by the buf paramter that is used by the recvfrom() function. */
 
-
+#define MAX_SEND_MSG_SIZE      ( sizeof(TestData_s) + MAX_TEST_PATTERN_SIZE + sizeof(uint32_t) )
+#define MIN_SEND_MSG_SIZE      ( sizeof(TestData_s) + sizeof(uint32_t) )
+#define MAX_RECV_MSG_SIZE      ( sizeof(TestResult_s) + sizeof(uint32_t) )
+#define MIN_RECV_MSG_SIZE      ( sizeof(TestResult_s) + sizeof(uint32_t) )
 
 
 
