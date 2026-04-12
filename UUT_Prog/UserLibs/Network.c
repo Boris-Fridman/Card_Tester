@@ -30,7 +30,7 @@ TaskHandle_t xNewtworkTaskHandle;      // Handle to network task.
 
 void NetworkTask(void *pvParameters);
 void Wait_for_DHCP(void);
-void DecodeData(uint8_t Data[], size_t Len);
+void DecodeData(uint8_t Data[], size_t Len,  TestData_s *TestData, uint8_t **TestPattern);
 void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, TestResult_s TestResult);
 
 
@@ -89,10 +89,16 @@ void NetworkTask(void *pvParameters)
           addr = buf->addr;
           port = buf->port;
           printf("%sReceived data from %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
-          DecodeData(data, len);
+          TestData_s TestData;
+          uint8_t *TestPattern = NULL;
+          DecodeData(data, len, &TestData, &TestPattern);
           netbuf_delete(buf);
 
           TestResult_s TestResult = { .Test_ID = 20, .TestResult =  E_TEST_SUCCEEDED}; // Defiend temperary. will be moved to other place.
+          TestResult.Test_ID = TestData.Test_ID;
+          TestResult.Periph_B_F = TestData.Periph_B_F;
+          if(TestPattern) free(TestPattern);
+
           SendResponse(conn, &addr, port, TestResult);                       // Defined here temperary. Will be moved to other place.
 
          }
@@ -130,27 +136,20 @@ void Wait_for_DHCP(void)
  }
 
 
-void DecodeData(uint8_t Data[], size_t Len)
+void DecodeData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern)
  {
-  TestData_s TestData;
-  uint8_t *TestPattern;
-  uint32_t RecvCRC, CalcCRC;
-  size_t PackSizeNetto, PackSizeFull;
   uint8_t *Pack;
   Pack = Data;
-  PackSizeFull = Len;
-  PackSizeNetto = PackSizeFull - sizeof(RecvCRC);
-  CalcCRC = FindCRC(Pack, Len - sizeof(RecvCRC), DEF_INIT_VAL);
-  memcpy(&RecvCRC, Pack + PackSizeNetto , sizeof(RecvCRC));
-  if(CalcCRC == RecvCRC)
+
+  if(CRC_Correct(Pack, Len))
    {
-    memcpy(&TestData, Pack, sizeof(TestData_s));
+    memcpy(TestData, Pack, sizeof(TestData_s));
 
-    TestPattern = calloc(TestData.Bit_Pattern_Length, sizeof(uint8_t));
-    if(TestPattern)
+    *TestPattern = calloc(TestData->Bit_Pattern_Length, sizeof(uint8_t));
+    if(*TestPattern)
      {
-
-      free(TestPattern);  // At this moment the free command exists here, but in the future maybe it will be moved to another place after proceeding the data.
+      memcpy(*TestPattern, Data+sizeof(TestData_s),TestData->Bit_Pattern_Length);
+      //free(*TestPattern);  // At this moment the free command exists here, but in the future maybe it will be moved to another place after proceeding the data.
      }
    }
 
@@ -159,20 +158,20 @@ void DecodeData(uint8_t Data[], size_t Len)
 
 void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, TestResult_s TestResult)
  {
-  err_t error;
   struct netbuf *buf;
   char *ip_str;
   uint16_t port;
   uint8_t *Pack;
-  uint32_t CalcCRC;
+  size_t Len;
+  Len = sizeof(TestResult_s) + CRC_SIZE;
 
-  Pack = calloc(sizeof(TestResult_s)+sizeof(uint32_t), sizeof(uint8_t));
+  Pack = calloc(Len, sizeof(uint8_t));
   if(Pack)
    {
 
     memcpy(Pack, &TestResult, sizeof(TestResult_s));
-    CalcCRC = FindCRC(Pack, sizeof(TestResult_s), DEF_INIT_VAL);
-    memcpy(Pack + sizeof(TestResult_s), &CalcCRC, sizeof(uint32_t));
+
+    Add_CRC(Pack, Len);
 
     buf = netbuf_new();
     netbuf_ref(buf, Pack, sizeof(TestResult_s) + sizeof(uint32_t));

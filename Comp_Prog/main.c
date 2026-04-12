@@ -184,7 +184,7 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
   TestData->Periph_B_F = PeriphBF;
   TestData->Test_ID = TestID;
   TestData->TestVoltage = rand() % (5000); // In mV
-  TimeOut = MIN_TIME_OUT + MaxAddDelay;
+  *TimeOut = MIN_TIME_OUT + MaxAddDelay;
 
  }
 

@@ -1,6 +1,7 @@
 #include "Network.h"
 
 #include <string.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -38,19 +39,7 @@ int InitNetwork()
   memset(&dest_addr, 0, sizeof(dest_addr));
   dest_addr.sin_family = AF_INET;
   dest_addr.sin_port = htons(DESTIN_PORT);
-  //dest_addr.sin_addr.s_addr = INADDR_ANY;
-  //dest_addr.sin_addr.s_addr = inet_addr(DESTIN_IP);  // Is used in case the address is known.
   memcpy(&dest_addr.sin_addr, host->h_addr_list[0], host->h_length);
-
-
-//   // Bind the socket to the server address
-//   if (bind(sockfd, (const struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0)
-//    {
-//     perror("Bind failed");
-//     close(sockfd);
-//     exit(EXIT_FAILURE);
-//    }
-
 
   return 0;
  }
@@ -67,18 +56,18 @@ int SendCommandToNetwork(TestData_s *TestData, uint8_t TestPattern[])
 
   uint8_t *Pack;
   size_t PackSizeNetto, PackSizeFull;
-  uint32_t CRC;
   ssize_t result;
 
   PackSizeNetto = sizeof(TestData_s) + TestData->Bit_Pattern_Length;
-  PackSizeFull = PackSizeNetto + sizeof(CRC);
+  PackSizeFull = PackSizeNetto + CRC_SIZE;
   Pack = calloc(PackSizeFull, sizeof(uint8_t));
   if(Pack)
    {
     memcpy(Pack, TestData, sizeof(TestData_s));
     memcpy(Pack + sizeof(TestData_s), TestPattern, TestData->Bit_Pattern_Length);
-    CRC = FindCRC(Pack, PackSizeNetto, DEF_INIT_VAL);
-    memcpy(Pack + PackSizeNetto, &CRC, sizeof(CRC));
+
+    Add_CRC(Pack, PackSizeFull);
+
     result = sendto(sockfd, Pack, PackSizeFull, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
     if(result >= 0 )
      printf("%sThe message was sent successfully.  %ld bytes were sent.%s\n\r", TermGreen, result, TermColorsReset);
@@ -101,23 +90,34 @@ int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
   ResultData->Test_ID = TestID;                                        // Defined for test only. Will be removed.
   r = rand();                                                          // Defined for test only. Will be removed.
   ResultData->TestResult = (r % 2) ? E_TEST_SUCCEEDED : E_TEST_FAILED; // Defined for test only. Will be removed.
-  
 
 
-  char buffer[BUFFER_SIZE];
+  struct timeval tv;
+  uint8_t buffer[BUFFER_SIZE];
   static struct sockaddr_in client_addr;
   socklen_t addr_len = sizeof(client_addr);
   
+  tv.tv_sec  = TimeOut / 1000;
+  tv.tv_usec = (TimeOut % 1000) * 1000;
 
-  int n = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len);
-  if(n >= MIN_RECV_MSG_SIZE)
+  if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) 
    {
-    printf("%sThe message was received.%s\n\r", TermGreen, TermColorsReset);
-    memcpy(ResultData, buffer, sizeof(TestResult_s));
-
+    perror("Error setting timeout");
    }
 
-  return 0;
+
+  ssize_t len = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len);
+  if(len >= (ssize_t)MIN_RECV_MSG_SIZE)
+   {
+    if(CRC_Correct(buffer, len))
+     {
+      printf("%sThe message was received successfully.  %ld bytes were received.%s\n\r", TermGreen, len, TermColorsReset);
+      memcpy(ResultData, buffer, sizeof(TestResult_s));
+      return 0;
+     }
+   }
+
+  return -1;
  }
 
 

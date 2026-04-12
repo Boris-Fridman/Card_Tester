@@ -30,3 +30,20 @@ uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal)
   return Result;
 
  }
+
+
+void Add_CRC(uint8_t buf[], size_t len)
+ {
+  uint32_t CalcCRC;
+  CalcCRC = FindCRC(buf, len - CRC_SIZE, DEF_INIT_VAL);
+  memcpy(buf + len - CRC_SIZE, &CalcCRC, CRC_SIZE);
+ }
+ 
+bool CRC_Correct(uint8_t buf[], size_t len)
+ {
+  uint32_t CalcCRC, RecvCRC;
+  CalcCRC = FindCRC(buf, len - CRC_SIZE, DEF_INIT_VAL);
+  memcpy(&RecvCRC, buf + len - CRC_SIZE, CRC_SIZE);
+  return CalcCRC == RecvCRC;
+ }
+

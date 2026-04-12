@@ -13,15 +13,19 @@ int CreateLoadDatabase(sqlite3 **conn)
   if(*conn == NULL)
    return -2;  // The pointer to the database wasn't given.
   result = sqlite3_open(DB_FILENAME, conn);
-  if(result!=SQLITE_OK)
+  if(result != SQLITE_OK)
    {
-    fprintf(stderr, "Cannot open database: %s\n\r", sqlite3_errmsg(*conn));
+    fprintf(stderr, "%sCannot open database: %s%s\n\r", TermRed, sqlite3_errmsg(*conn), TermColorsReset);
     return -1;  // Couldn't create the database.
    }
   else
    {
     char *err_msg;
     result = sqlite3_exec(*conn, "CREATE TABLE IF NOT EXISTS TESTS_RESULTS(test_id INT, date_time TEXT, test_result INT);", 0, 0, &err_msg);
+    if(result != SQLITE_OK)
+     {
+      fprintf(stderr, "%sCannot prepare the table: %s%s\n\r", TermRed, sqlite3_errmsg(*conn), TermColorsReset);
+     }
     sqlite3_close(*conn);
     return 0; // The database was loaded successfully.
    }
@@ -33,16 +37,28 @@ int GetLastTestIDFromDataBase(sqlite3 **conn)
   sqlite3_stmt* stmt;
 
   result = sqlite3_open(DB_FILENAME, conn);
-
-  result = sqlite3_prepare_v2(*conn, "SELECT test_id FROM TESTS_RESULTS;", -1, &stmt, 0);
-
-  do
+  if(result != SQLITE_OK)
    {
-    result = sqlite3_step(stmt);
-    if(result == SQLITE_ROW)
-    valtoret = sqlite3_column_int(stmt,0);
+    fprintf(stderr, "%sCannot open the file with table: %s%s\n\r", TermRed, sqlite3_errmsg(*conn), TermColorsReset);
    }
-  while(result == SQLITE_ROW);
+  else
+   {
+    result = sqlite3_prepare_v2(*conn, "SELECT test_id FROM TESTS_RESULTS;", -1, &stmt, 0);
+    if(result != SQLITE_OK)
+     {
+      fprintf(stderr, "%sCannot prepere the table: %s%s\n\r", TermRed, sqlite3_errmsg(*conn), TermColorsReset);
+     }
+    else
+     {
+      do
+       {
+        result = sqlite3_step(stmt);
+        if(result == SQLITE_ROW)
+        valtoret = sqlite3_column_int(stmt,0);
+       }
+      while(result == SQLITE_ROW);
+     }
+   }
   sqlite3_close(*conn);
   return valtoret;
  }

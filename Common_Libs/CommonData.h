@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 /*
  * Terminal Colors
@@ -26,6 +27,14 @@
 #define MAX(X, Y) ( (X) > (Y) ? (X) : (Y) )           /* The macro returning the biggest from the two values.  */
 #define MIN(X, Y) ( (X) < (Y) ? (X) : (Y) )           /* The macro returning the smallest from the two values. */
 
+/*
+ * Div macros
+ */
+
+#define DIV_RND   (X,Y) ( ((X) + (Y) / 2) / (Y) )     /* Deviation with rounding.      10/6 will give 2 and 10/3 will give 3  */
+#define DIV_RND_UP(X,Y) ( ((X) + (Y) - 1) / (Y) )     /* Deviation with rounding up.   10/6 will give 2 and 10/3 will give 4  */
+#define DIV_RND_DN(X,Y) ( (X) / (Y)             )     /* Deviation with rounding down. 10/6 will give 1 and 10/3 will give 3 Regular deviation equal to regular "/". Is defined for compliation the previous macros deviations */
+
 
 /*
  * Test data definitions
@@ -47,10 +56,11 @@
 #define DESTIN_PORT             8080                   /* Server port to which are sent the call messages. */
 #define BUFFER_SIZE             1024                   /* The length in bytes, of the buffer pointed by the buf paramter that is used by the recvfrom() function. */
 
-#define MAX_SEND_MSG_SIZE      ( sizeof(TestData_s) + MAX_TEST_PATTERN_SIZE + sizeof(uint32_t) )
-#define MIN_SEND_MSG_SIZE      ( sizeof(TestData_s) + sizeof(uint32_t) )
-#define MAX_RECV_MSG_SIZE      ( sizeof(TestResult_s) + sizeof(uint32_t) )
-#define MIN_RECV_MSG_SIZE      ( sizeof(TestResult_s) + sizeof(uint32_t) )
+#define CRC_SIZE               ( sizeof(uint32_t) )
+#define MAX_SEND_MSG_SIZE      ( sizeof(TestData_s) + MAX_TEST_PATTERN_SIZE + CRC_SIZE )
+#define MIN_SEND_MSG_SIZE      ( sizeof(TestData_s) + CRC_SIZE )
+#define MAX_RECV_MSG_SIZE      ( sizeof(TestResult_s) + CRC_SIZE )
+#define MIN_RECV_MSG_SIZE      ( sizeof(TestResult_s) + CRC_SIZE )
 
 
 
@@ -99,9 +109,18 @@ typedef struct __attribute__((packed)) TestResult_s // The attribute "__attribut
  }TestResult_s;
 
 
+
+
+
+
 #define DEF_INIT_VAL 0xEF45AB12
 
 uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal);
+
+void Add_CRC(uint8_t buf[], size_t len);
+bool CRC_Correct(uint8_t buf[], size_t len);
+
+
 
 
 #endif  //  ____CommonData_h__
