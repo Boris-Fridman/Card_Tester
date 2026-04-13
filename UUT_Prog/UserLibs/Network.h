@@ -8,4 +8,4 @@
 void NetworkInit();
 
 
-#endif  //  ____Network_h__
+#endif  /*  ____Network_h__  */

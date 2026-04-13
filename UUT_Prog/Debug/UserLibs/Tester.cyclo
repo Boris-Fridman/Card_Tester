@@ -1,0 +1,4 @@
+../UserLibs/Tester.c:61:6:ReqForTest	1
+../UserLibs/Tester.c:74:6:TesterTask	3
+../UserLibs/Tester.c:97:6:TesterInit	2
+../UserLibs/Tester.c:112:6:MakeTest	1

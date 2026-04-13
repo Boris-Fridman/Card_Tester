@@ -116,6 +116,14 @@ int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
       return 0;
      }
    }
+  else
+   {
+    fprintf(stderr, "%s", TermRed);
+    //printf("%sNo Response.%s\n\r", TermRed, TermColorsReset);
+    perror("Problem in receiving data");
+    fprintf(stderr, "%s", TermColorsReset);
+    return -1;
+   }
 
   return -1;
  }

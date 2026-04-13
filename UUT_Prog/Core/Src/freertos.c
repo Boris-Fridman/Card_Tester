@@ -28,6 +28,7 @@
 #include "netif.h"
 #include "CommonData.h"
 #include "Network.h"
+#include "Tester.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -129,6 +130,7 @@ void StartDefaultTask(void const * argument)
   extern struct netif gnetif;
   netif_set_hostname(&gnetif, HOST_NAME);
   NetworkInit();
+  TesterInit();
 
   /* Infinite loop */
   for(;;)

@@ -1,6 +1,7 @@
 #include "Network.h"
 
 #include "CommonData.h"
+#include "Tester.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +22,7 @@
 
 
 #define xNETWORK_PRIORITY 0
-#define xNETWORK_STACK_SIZE MAX(configMINIMAL_STACK_SIZE, 1024)
+#define xNETWORK_STACK_SIZE MAX(configMINIMAL_STACK_SIZE, 512)
 
 
 
@@ -93,6 +94,10 @@ void NetworkTask(void *pvParameters)
           uint8_t *TestPattern = NULL;
           DecodeData(data, len, &TestData, &TestPattern);
           netbuf_delete(buf);
+
+          ReqForTest(TestData, TestPattern);
+
+
 
           TestResult_s TestResult = { .Test_ID = 20, .TestResult =  E_TEST_SUCCEEDED}; // Defiend temperary. will be moved to other place.
           TestResult.Test_ID = TestData.Test_ID;
