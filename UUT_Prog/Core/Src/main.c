@@ -61,14 +61,16 @@ static void MPU_Config(void);
 void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 int _write(int file, char *ptr, int len)
-{
-HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len - 1, HAL_MAX_DELAY);
-if (ptr[len - 1] == '\n') {
-HAL_UART_Transmit(&huart3, (uint8_t*)"\r\n", 2, HAL_MAX_DELAY);
-}
-else {
-HAL_UART_Transmit(&huart3, (uint8_t*)ptr + len - 1, 1, HAL_MAX_DELAY);
-}
+ {
+  HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len - 1, HAL_MAX_DELAY);
+  if (ptr[len - 1] == '\n')
+   {
+    HAL_UART_Transmit(&huart3, (uint8_t*)"\r\n", 2, HAL_MAX_DELAY);
+   }
+  else
+   {
+    HAL_UART_Transmit(&huart3, (uint8_t*)ptr + len - 1, 1, HAL_MAX_DELAY);
+   }
 return len;
 }
 
@@ -116,12 +118,12 @@ int main(void)
   MX_ADC1_Init();
   MX_DAC_Init();
   MX_SPI1_Init();
-  MX_SPI2_Init();
   MX_TIM1_Init();
-  MX_USART1_UART_Init();
-  MX_USART2_UART_Init();
-  MX_I2C2_Init();
   MX_I2C1_Init();
+  MX_I2C4_Init();
+  MX_USART6_UART_Init();
+  MX_UART4_Init();
+  MX_SPI4_Init();
   /* USER CODE BEGIN 2 */
 #ifdef DEBUG
   __HAL_DBGMCU_FREEZE_TIM6();  // Prevents jumping to the timer handler during stepping in debugging.
