@@ -191,3 +191,10 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
 
 
  }
+
+void GiveResults(PeriphBitField_s DevResults, uint32_t Test_ID)
+ {
+
+ }
+
+

@@ -66,11 +66,13 @@
 
 typedef enum __attribute__((__packed__)) PeriphType_e  // The attribute "__attribute__((__packed__))" is defined to make the enumeration to be in one byte to ensure the correct data length while sending. 
  {
-  E_TIMER =  1,
-  E_UART  =  2,
-  E_SPI   =  4,
-  E_I2C   =  8,
-  E_ADC   = 16
+  E_TIMER,
+  E_UART,
+  E_SPI,
+  E_I2C,
+  E_ADC,
+
+  E_NUM_PERIPHS
  }PeriphType_e;
 
 typedef enum __attribute__((__packed__)) TestResType_e  // The attribute "__attribute__((__packed__))" is defined to make the enumeration to be in one byte to ensure the correct data length while sending. 
