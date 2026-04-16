@@ -89,19 +89,19 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
         switch(ch)
          {
            case 't':
-             BFResult->Timer_Flag = 1;
+             BFResult->Timer_bf = 1;
             break;
            case 'u':
-             BFResult->UART_Flag = 1;
+             BFResult->UART_bf = 1;
             break;
            case 's':
-             BFResult->SPI_Flag = 1;
+             BFResult->SPI_bf = 1;
             break;
            case 'i':
-             BFResult->I2C_Flag = 1;
+             BFResult->I2C_bf = 1;
             break;
            case 'a':
-             BFResult->ADC_Flag = 1;
+             BFResult->ADC_bf = 1;
             break;
            case 'h':     
              PrinthelpMessage(argv[0]);
@@ -145,12 +145,12 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
   uint32_t MinFreq, MaxAddDelay = 0;
 
   MaxAddDelay = 0;
-  if((PeriphBF.I2C_Flag)||(PeriphBF.SPI_Flag)||(PeriphBF.UART_Flag))
+  if((PeriphBF.I2C_bf)||(PeriphBF.SPI_bf)||(PeriphBF.UART_bf))
    {
     MinFreq = MAX_POSSIBLE_FREAUENCY;
-    if(PeriphBF.I2C_Flag)   MinFreq = MIN(MinFreq, MIN_I2C_FREQUENCY);
-    if(PeriphBF.SPI_Flag)   MinFreq = MIN(MinFreq, MIN_SPI_FREQUENCY);
-    if(PeriphBF.UART_Flag)  MinFreq = MIN(MinFreq, MIN_UART_FREQUENCY);
+    if(PeriphBF.I2C_bf)   MinFreq = MIN(MinFreq, MIN_I2C_FREQUENCY);
+    if(PeriphBF.SPI_bf)   MinFreq = MIN(MinFreq, MIN_SPI_FREQUENCY);
+    if(PeriphBF.UART_bf)  MinFreq = MIN(MinFreq, MIN_UART_FREQUENCY);
     MaxAddDelay += 1000 * TestData->Bit_Pattern_Length * 8 / MinFreq;
     TestData->Bit_Pattern_Length = rand() % MAX_TEST_PATTERN_SIZE;  // Determining Test Pattern Length randomly but less than Maximum permitted length.
     for(uint8_t i = 0; i< TestData->Bit_Pattern_Length; i++)
@@ -163,7 +163,7 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
     TestData->Bit_Pattern_Length = 0;
    }
    
-  if(PeriphBF.Timer_Flag)
+  if(PeriphBF.Timer_bf)
    {
     TestData->TestTime = rand() % (1000);    // In ms
     MaxAddDelay += TestData->TestTime;
@@ -172,7 +172,7 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
    {
     TestData->TestTime = 0;
    }
-  if(PeriphBF.ADC_Flag)
+  if(PeriphBF.ADC_bf)
    {
     TestData->TestVoltage = rand() % (5000); // In mV
    }

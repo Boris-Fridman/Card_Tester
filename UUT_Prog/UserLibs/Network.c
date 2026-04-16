@@ -192,9 +192,26 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
 
  }
 
-void GiveResults(PeriphBitField_s DevResults, uint32_t Test_ID)
+void GiveResults(PeriphBitField_s DevResults, PeriphBitField_s DevsUnderTest, uint32_t Test_ID)
  {
+  TestResult_s TestResult;
+  uint8_t *ResultsBits;
+  uint8_t *DUTBits;  // DUT - Devices Under Test.
+  bool FinalResult;
 
+  ResultsBits = (uint8_t*)&DevResults;
+  DUTBits = (uint8_t*)&DevsUnderTest;
+
+  FinalResult = (!((*ResultsBits)^(*DUTBits)));  //(!(~(~((*ResultsBits)^(*DUTBits))))) - Bit-xoring devices under test with existing devices will give "1" in fails. Boolean not ("!") will give true if all bits were zeros that means all devices passed the test. otherwise will be given "false".
+
+  TestResult.Test_ID = Test_ID;
+  TestResult.Periph_B_F = DevsUnderTest;
+  TestResult.TestResult = (FinalResult ? E_TEST_SUCCEEDED : E_TEST_FAILED);
+
+  // Here must be implemented connection parameters.
+  //  .....  *****  .....
+  // And than the next line must be uncommented.
+  //SendResponse(conn, &addr, port, TestResult);                       // Is commented out due to connection for back response is not implemented yet.
  }
 
 

@@ -8,6 +8,11 @@
 #define CRC_SHIFT 0
 #define MSB_MASK  0xAB25CD87
 
+char const * const ResultColors[] = {TermRed, TermGreen};
+char const * const ResultMessages[] = {"Fail", "Pass"};
+
+char const * const PeriphNames[E_NUM_PERIPHS] = {"UART", "SPI", "I2C", "ADC", "Timer"};
+
 
 uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal)
  {

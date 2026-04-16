@@ -8,14 +8,27 @@
 
 /*
  * Terminal Colors
+ *
+ * The information about colors can be found in the sine:
+ * https://en.wikipedia.org/wiki/ANSI_escape_code
  */
+#define TermBlack         "\033[20m"
+#define TermDarkRed       "\033[21m"
+#define TermDarkGreen     "\033[22m"
+#define TermDarkYello     "\033[23m"
+#define TermDarkBlue      "\033[24m"
+#define TermDarkMagenta   "\033[25m"
+#define TermDarkCyan      "\033[26m"
+#define TermGrayL         "\033[27m"    //  "Dark White"   (Gray 90  According to site https://github.com/ThomasDickey/xterm-snapshots/blob/master/XTerm-col.ad)
 
+#define TermGrayD         "\033[30m"    //  "Light Black"  (Gray 50  According to site https://github.com/ThomasDickey/xterm-snapshots/blob/master/XTerm-col.ad)
 #define TermRed           "\033[31m"
 #define TermGreen         "\033[32m"
 #define TermYello         "\033[33m"
 #define TermBlue          "\033[34m"
 #define TermMagenta       "\033[35m"
 #define TermCyan          "\033[36m"
+#define TermWhite         "\033[37m"
 
 #define TermColorsReset   "\033[39;49m"
 
@@ -84,11 +97,11 @@ typedef enum __attribute__((__packed__)) TestResType_e  // The attribute "__attr
 
 typedef struct PeriphBitField_s
  {
-  uint8_t Timer_Flag     : 1;
-  uint8_t UART_Flag      : 1;
-  uint8_t SPI_Flag       : 1;
-  uint8_t I2C_Flag       : 1;
-  uint8_t ADC_Flag       : 1;
+  uint8_t Timer_bf     : 1;
+  uint8_t UART_bf      : 1;
+  uint8_t SPI_bf       : 1;
+  uint8_t I2C_bf       : 1;
+  uint8_t ADC_bf       : 1;
   uint8_t Reserved  : 3;
  }PeriphBitField_s;
 
@@ -111,6 +124,15 @@ typedef struct __attribute__((packed)) TestResult_s // The attribute "__attribut
  }TestResult_s;
 
 
+#define Timer_Flag (1 << E_TIMER)
+#define UART_Flag  (1 << E_UART)
+#define SPI_Flag   (1 << E_SPI)
+#define I2C_Flag   (1 << E_I2C)
+#define ADC_Flag   (1 << E_ADC)
+
+
+ extern char const * const ResultColors[];
+ extern char const * const ResultMessages[];
 
 
 

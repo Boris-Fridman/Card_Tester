@@ -76,6 +76,7 @@ void MX_LWIP_Init(void)
 
   /* Create the Ethernet link handler thread */
 /* USER CODE BEGIN H7_OS_THREAD_DEF_CREATE_CMSIS_RTOS_V1 */
+  netif_set_hostname(&gnetif, HOST_NAME);
   osThreadDef(EthLink, ethernet_link_thread, osPriorityBelowNormal, 0, configMINIMAL_STACK_SIZE *2);
   osThreadCreate (osThread(EthLink), &gnetif);
 /* USER CODE END H7_OS_THREAD_DEF_CREATE_CMSIS_RTOS_V1 */
@@ -84,7 +85,7 @@ void MX_LWIP_Init(void)
   dhcp_start(&gnetif);
 
 /* USER CODE BEGIN 3 */
-
+  netif_set_hostname(&gnetif, HOST_NAME);
 /* USER CODE END 3 */
 }
 
