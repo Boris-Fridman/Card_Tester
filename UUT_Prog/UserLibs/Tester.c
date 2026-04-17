@@ -31,15 +31,15 @@
 
 
 
-#define xTESTER_PRIORITY       0
-#define xTESTER_STACK_SIZE     MAX(configMINIMAL_STACK_SIZE, 1024)
+#define xTESTER_PRIORITY       0                                          // Priority of the tester tasks.
+#define xTESTER_STACK_SIZE     MAX(configMINIMAL_STACK_SIZE, 1024)        // Stack size of the main-test-task.
 
 
-#define xDEV_TEST_STACK_SIZE   MAX(configMINIMAL_STACK_SIZE, 512)
-#define DEV_TEST_QUEUE_LEN     3
+#define xDEV_TEST_STACK_SIZE   MAX(configMINIMAL_STACK_SIZE, 512)         // Stack size of the single-dev-test-task.
+#define DEV_TEST_QUEUE_LEN     3 /*Will be changed to 1 in the future.*/  // Length of the queue from the network-task to the main-test-task.
 
-#define TEST_REQ_QUEUE_LEN     5
-#define TEST_RESP_QUEUE_LEN   (DEV_TEST_QUEUE_LEN * E_NUM_PERIPHS)
+#define TEST_REQ_QUEUE_LEN     5                                          // Length of the queue of requests from the main-test-task to the single-dev-test-task.
+#define TEST_RESP_QUEUE_LEN   (DEV_TEST_QUEUE_LEN * E_NUM_PERIPHS)        // Length of the queue of responses from the single-dev-test-task to the main-test-task.
 
 
 
@@ -69,23 +69,30 @@ typedef struct TestReqMesg_s
   }TestRespMesg_s;
 
 
-
-typedef struct PortTestMesg_s
+typedef struct DevTestInfo_s
  {
+  uint32_t TestVoltage;
+  uint32_t TestTime;
   uint8_t Num_Interations;
   uint8_t Bit_Pattern_Length;
-  uint8_t TestPattern[MAX_TEST_PATTERN_SIZE];
- }PortTestMesg_s;
+  uint8_t *TestPattern;
+ }DevTestInfo_s;
+
+ typedef struct DevTestMesg_s
+  {
+   DevTestInfo_s *TestInfo;
+  }DevTestMesg_s;
+
+typedef struct DevTaskParams_s
+ {
+  QueueHandle_t DevTestQue;
+  PeriphType_e PeriphType;
+ }DevTaskParams_s;
 
 
+TaskHandle_t xTesterTaskHandle;                   // Handle to Tester      task.
 
-TaskHandle_t xTesterTaskHandle;        // Handle to Tester      task.
-TaskHandle_t xUARTTestTaskHandle;      // Handle to UART   Test task.
-TaskHandle_t xSPITestTaskHandle;       // Handle to SPI    Test task.
-TaskHandle_t xI2CTestTaskHandle;       // Handle to I2C    Test task.
-TaskHandle_t xADCTestTaskHandle;       // Handle to ADC    Test task.
-TaskHandle_t xTimerTestTaskHandle;     // Handle to Timer  Test task.
-
+TaskHandle_t xDevTestTaskHandles[E_NUM_PERIPHS];  // Handles to UART, SPI,I2C, ADC and Timer tasks.  -- Will be implemented in the future.
 
 QueueHandle_t TestReqQueue;
 QueueHandle_t TestRespQueue;
@@ -93,12 +100,9 @@ static SemaphoreHandle_t RespQueueMut;
 
 
 
-void MakeTest(TestData_s TestData, uint8_t TestPattern[]);
+void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F);
 
-
-void ReqUARTTest(uint8_t TestPattern[], uint8_t PatLen, uint8_t Num_Interations);
-void ReqSPITest(uint8_t TestPattern[], uint8_t PatLen, uint8_t Num_Interations);
-
+void ReqDevTest(DevTestInfo_s *DevTestInfo, PeriphType_e PeriphType);
 
 
 
@@ -128,6 +132,7 @@ void TesterTask(void *pvParameters)
   TestReqMesg_s ReqMsg;
   TestRespMesg_s RespMsg;
   PeriphBitField_s DevResults, RespondedDevs;
+  static DevTestInfo_s DevTestInfo = {0};
 
   for(;;)
    {
@@ -135,11 +140,20 @@ void TesterTask(void *pvParameters)
      {
       memset(&DevResults, 0, sizeof(DevResults));
       memset(&RespondedDevs, 0, sizeof(RespondedDevs));
-      MakeTest(ReqMsg.TestData, ReqMsg.TestPattern);
+      DevTestInfo.Bit_Pattern_Length = ReqMsg.TestData.Bit_Pattern_Length;
+      DevTestInfo.Num_Interations = ReqMsg.TestData.Num_Interations;
+      DevTestInfo.TestTime = ReqMsg.TestData.TestTime;
+      DevTestInfo.TestVoltage = ReqMsg.TestData.TestVoltage;
+      if(ReqMsg.TestData.Bit_Pattern_Length)
+       {
+        DevTestInfo.TestPattern = calloc(ReqMsg.TestData.Bit_Pattern_Length, sizeof(uint8_t));
+       }
+      MakeTest(&DevTestInfo, ReqMsg.TestData.Periph_B_F);
       for(;;)
        {
         if(pdPASS == xQueueReceive(TestRespQueue, &RespMsg, portMAX_DELAY))
          {
+
           *(uint8_t*)&RespondedDevs |= (1 << RespMsg.DevType);                                                // Marking the device as responded.
           *(uint8_t*)&DevResults |= ((1 << RespMsg.DevType))*((uint8_t)RespMsg.Result);                       // Marking the device's answer
           if(!memcmp((void*)&RespondedDevs, (void*)&(ReqMsg.TestData.Periph_B_F), sizeof(PeriphBitField_s)))  // All requested devices responded.
@@ -147,6 +161,11 @@ void TesterTask(void *pvParameters)
          }
        }
       GiveResults(DevResults, ReqMsg.TestData.Periph_B_F, ReqMsg.TestData.Test_ID);
+      if(DevTestInfo.TestPattern)
+       {
+        free(DevTestInfo.TestPattern);
+        DevTestInfo.TestPattern = NULL;
+       }
      }
 
     vTaskDelay(pdMS_TO_TICKS(1));
@@ -158,28 +177,44 @@ void TesterTask(void *pvParameters)
 
 
 
-void MakeTest(TestData_s TestData, uint8_t TestPattern[])
+void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F)
  {
-  if(TestData.Periph_B_F.UART_bf)
+  uint8_t i;
+  uint8_t PeriphFlags = *(uint8_t*)&Periph_B_F;
+  for(i = 0; i < E_NUM_PERIPHS; i++)
    {
-    ReqUARTTest(TestPattern, TestData.Bit_Pattern_Length, TestData.Num_Interations);
+    if((PeriphFlags >> i)&0x01)
+     ReqDevTest(DevTestInfo, i);
    }
-  if(TestData.Periph_B_F.SPI_bf)
-   {
-    ReqSPITest(TestPattern, TestData.Bit_Pattern_Length, TestData.Num_Interations);
-   }
-  if(TestData.Periph_B_F.I2C_bf)
-   {
+//  if(Periph_B_F.UART_bf)
+//   {
+//    ReqDevTest(DevTestInfo, E_UART);
+//   }
+//  if(Periph_B_F.SPI_bf)
+//   {
+//    ReqDevTest(DevTestInfo, E_SPI);
+//   }
+//  if(Periph_B_F.I2C_bf)
+//   {
+//    ReqDevTest(DevTestInfo, E_I2C);
+//   }
+//  if(Periph_B_F.ADC_bf)
+//   {
+//
+//   }
+//  if(Periph_B_F.Timer_bf)
+//   {
+//
+//   }
+ }
 
-   }
-  if(TestData.Periph_B_F.ADC_bf)
-   {
+DevTaskParams_s DevTaskParams[E_NUM_PERIPHS] = {0};
 
-   }
-  if(TestData.Periph_B_F.Timer_bf)
-   {
-
-   }
+void ReqDevTest(DevTestInfo_s *DevTestInfo, PeriphType_e PeriphType)
+ {
+  DevTestMesg_s Message;
+  Message.TestInfo = DevTestInfo;
+  xQueueSend(DevTaskParams[PeriphType].DevTestQue, &Message, pdMS_TO_TICKS(10));
  }
 
 
@@ -195,16 +230,6 @@ void MakeTest(TestData_s TestData, uint8_t TestPattern[])
  * *************************************************************************************************************
 */
 static SemaphoreHandle_t UARTTestSem;
-QueueHandle_t UARTTestQue;
-
-void ReqUARTTest(uint8_t TestPattern[], uint8_t PatLen, uint8_t Num_Interations)
- {
-  PortTestMesg_s Message;
-  Message.Bit_Pattern_Length = PatLen;
-  Message.Num_Interations = Num_Interations;
-  memcpy(Message.TestPattern, TestPattern, PatLen);
-  xQueueSend(UARTTestQue, &Message, pdMS_TO_TICKS(10));
- }
 
 
 /*
@@ -221,7 +246,7 @@ bool TestUART(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
 	uint32_t MaxTimeToWait;
 	MaxTimeToWait = MAX(10, (TestPatLen * 1000) / MIN_UART_FREQUENCY);
 
-    printf("\n\r%sStarting UART Test...%s\n\r", TermBlue, TermColorsReset);
+    //printf("\n\r%sStarting UART Test...%s\n\r", TermBlue, TermColorsReset);
     for(i = 0; i < NInt; i++)
      {
       TestResult = !HAL_UART_Receive_DMA(&INSPECTED_UART, MedTestPattern, TestPatLen);  // Waiter
@@ -239,7 +264,7 @@ bool TestUART(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
       TestResult = !memcmp(TestPattern, MedTestPattern, TestPatLen);
       if(!TestResult) break;
      }
-    printf("\n\r%sThe UART Test %s%s%s\n\r", TermBlue, ResultColors[TestResult], ResultMessages[TestResult], TermColorsReset);
+    //printf("\n\r%sThe UART Test %s%s%s\n\r", TermBlue, ResultColors[TestResult], ResultMessages[TestResult], TermColorsReset);
 
     return TestResult;
  }
@@ -258,21 +283,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 }
 
 
-void UARTTestTask(void *pvParameters)
- {
-  PortTestMesg_s Message;
-  bool Result;
-  for(;;)
-   {
-    if(pdPASS == xQueueReceive(UARTTestQue, &Message, portMAX_DELAY))
-     {
-      Result = TestUART(Message.Num_Interations, Message.TestPattern, Message.Bit_Pattern_Length);
-      SendTestResponse(Result, E_UART);
-     }
-    vTaskDelay(pdMS_TO_TICKS(1));
-   }
-  vTaskDelete(NULL); /* Emergency task deletion in case of break in loop existence */
- }
 
 
 
@@ -284,16 +294,6 @@ void UARTTestTask(void *pvParameters)
 
 
 static SemaphoreHandle_t SPITestSem;
-QueueHandle_t SPITestQue;
-
-void ReqSPITest(uint8_t TestPattern[], uint8_t PatLen, uint8_t Num_Interations)
- {
-  PortTestMesg_s Message;
-  Message.Bit_Pattern_Length = PatLen;
-  Message.Num_Interations = Num_Interations;
-  memcpy(Message.TestPattern, TestPattern, PatLen);
-  xQueueSend(SPITestQue, &Message, pdMS_TO_TICKS(10));
- }
 
 /*
  * TestSPI(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
@@ -309,7 +309,7 @@ bool TestSPI(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
   uint32_t MaxTimeToWait;
   MaxTimeToWait = MAX(10, (TestPatLen * 1000) / MIN_SPI_FREQUENCY);
 
-  printf("\n\r%sStarting SPI Test...%s\n\r", TermBlue, TermColorsReset);
+  //printf("\n\r%sStarting SPI Test...%s\n\r", TermBlue, TermColorsReset);
   for(i = 0; i < NInt; i++)
    {
     TestResult = !HAL_SPI_Receive_DMA(&INSPECTED_SPI, MedTestPattern, TestPatLen);  // Waiter    (Slave)
@@ -327,9 +327,9 @@ bool TestSPI(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
     TestResult = !memcmp(TestPattern, MedTestPattern, TestPatLen);
     if(!TestResult) break;
    }
-  printf("\n\r%sThe SPI Test %s%s%s\n\r", TermBlue, ResultColors[TestResult], ResultMessages[TestResult], TermColorsReset);
+  //printf("\n\r%sThe SPI Test %s%s%s\n\r", TermBlue, ResultColors[TestResult], ResultMessages[TestResult], TermColorsReset);
 
-  return true;
+  return TestResult;
  }
 
 
@@ -346,22 +346,120 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 }
 
 
-void SPITestTask(void *pvParameters)
+
+
+/*
+ * *************************************************************************************************************
+ **          I2C Test Functions
+ * *************************************************************************************************************
+*/
+
+
+static SemaphoreHandle_t I2CTestSem;
+
+/*
+ * TestI2C(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
+ *
+ * returns "true" if the test passed. Otherwise returns "false".
+ */
+#define SALVE_ADDR 0x55
+bool TestI2C(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
  {
-  PortTestMesg_s Message;
-  bool Result;
+  uint8_t RecvPat[MAX_TEST_PATTERN_SIZE];
+  uint8_t MedTestPattern[MAX_TEST_PATTERN_SIZE];
+  bool TestResult;
+  uint8_t i;
+  uint32_t MaxTimeToWait;
+  MaxTimeToWait = MAX(10, (TestPatLen * 1000) / MIN_I2C_FREQUENCY);
+
+  //printf("\n\r%sStarting I2C Test...%s\n\r", TermBlue, TermColorsReset);
+  for(i = 0; i < NInt; i++)
+   {
+    TestResult = !HAL_I2C_Slave_Receive_DMA(&INSPECTED_I2C, MedTestPattern, TestPatLen);  // Waiter    (Slave)
+    if(!TestResult) break;
+    TestResult = !HAL_I2C_Master_Transmit_DMA(&INSPECTOR_I2C, SALVE_ADDR, TestPattern, TestPatLen);    // Activator (Master)
+    if(!TestResult) break;
+    TestResult = xSemaphoreTake(I2CTestSem, pdMS_TO_TICKS(MaxTimeToWait));
+    if(!TestResult) break;
+    TestResult = !HAL_I2C_Slave_Transmit_DMA(&INSPECTED_I2C, MedTestPattern, TestPatLen); // Waiter    (Slave)
+    if(!TestResult) break;
+    TestResult = !HAL_I2C_Master_Receive_DMA(&INSPECTOR_I2C, SALVE_ADDR, RecvPat, TestPatLen);         // Activator (Master)
+    if(!TestResult) break;
+    TestResult = xSemaphoreTake(I2CTestSem, pdMS_TO_TICKS(MaxTimeToWait));
+    if(!TestResult) break;
+    TestResult = !memcmp(TestPattern, MedTestPattern, TestPatLen);
+    if(!TestResult) break;
+   }
+  //printf("\n\r%sThe I2C Test %s%s%s\n\r", TermBlue, ResultColors[TestResult], ResultMessages[TestResult], TermColorsReset);
+
+  return TestResult;
+ }
+
+
+void HAL_I2C_RxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+  static BaseType_t xHigherPriorityTaskWoken;
+  xHigherPriorityTaskWoken = pdFALSE;
+
+  if( (hi2c == &INSPECTOR_I2C) || (hi2c == &INSPECTED_I2C) )
+   {
+    xSemaphoreGiveFromISR(I2CTestSem, &xHigherPriorityTaskWoken);
+   }
+
+}
+
+
+void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
+ {
+  HAL_I2C_RxCpltCallback(hi2c);
+ }
+
+void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c)
+ {
+  HAL_I2C_RxCpltCallback(hi2c);
+ }
+/*
+ * *************************************************************************************************************
+ **          Common Devices Test Functions
+ * *************************************************************************************************************
+*/
+
+void DevTestTask(void *pvParameters)//void DevTestTask(DevTaskParams_s const * const pvParameters)
+ {
+#ifdef DEBUG
+  char const * const OwnTaskName = pcTaskGetName(NULL); // Is defined to make debugging easier.
+  UNUSED(OwnTaskName);
+#endif
+  DevTaskParams_s *DevTaskParams = pvParameters;
+  DevTestMesg_s Message;
+  bool Result = false;
   for(;;)
    {
-    if(pdPASS == xQueueReceive(SPITestQue, &Message, portMAX_DELAY))
+    if(pdPASS == xQueueReceive(DevTaskParams->DevTestQue, &Message, portMAX_DELAY))
      {
-      Result = TestSPI(Message.Num_Interations, Message.TestPattern, Message.Bit_Pattern_Length);
-      SendTestResponse(Result, E_SPI);
+      printf("\n\r%sStarting %s Test...%s\n\r", TermBlue, PeriphNames[DevTaskParams->PeriphType], TermColorsReset);
+      switch(DevTaskParams->PeriphType)
+       {
+        case E_UART:
+          Result = TestUART(Message.TestInfo->Num_Interations, Message.TestInfo->TestPattern, Message.TestInfo->Bit_Pattern_Length);
+         break;
+        case E_SPI:
+          Result = TestSPI(Message.TestInfo->Num_Interations, Message.TestInfo->TestPattern, Message.TestInfo->Bit_Pattern_Length);
+         break;
+        case E_I2C:
+          Result = TestI2C(Message.TestInfo->Num_Interations, Message.TestInfo->TestPattern, Message.TestInfo->Bit_Pattern_Length);
+         break;
+        default:
+          Result = false;
+         break;
+       }
+      printf("\n\r%sThe %s Test %s%s%s\n\r", TermBlue, PeriphNames[DevTaskParams->PeriphType], ResultColors[Result], ResultMessages[Result], TermColorsReset);
+      SendTestResponse(Result, DevTaskParams->PeriphType);
      }
-    vTaskDelay(pdMS_TO_TICKS(1));
+     vTaskDelay(pdMS_TO_TICKS(1));
    }
   vTaskDelete(NULL); /* Emergency task deletion in case of break in loop existence */
  }
-
 
 
 
@@ -377,6 +475,7 @@ void SPITestTask(void *pvParameters)
 void TesterInit()
  {
   BaseType_t result;
+  uint8_t i;
 
   TestReqQueue = xQueueCreate(TEST_REQ_QUEUE_LEN, sizeof(TestReqMesg_s));
   if(TestReqQueue == NULL)
@@ -405,14 +504,32 @@ void TesterInit()
 	for(;;);
    }
 
- /*       UART Task Creating             */
 
-  UARTTestQue = xQueueCreate(DEV_TEST_QUEUE_LEN, sizeof(PortTestMesg_s));
-  if(UARTTestQue == NULL)
+  char TaskName[configMAX_TASK_NAME_LEN];
+
+  for(i = 0; i < E_NUM_PERIPHS; i++)
    {
-    printf("\n\r%sThe UART Test Queue couldn't be created.\n\rHalting !!!%s\n\r", TermRed, TermColorsReset);
-    for(;;);
+    DevTaskParams[i].PeriphType = i;
+    DevTaskParams[i].DevTestQue = xQueueCreate(DEV_TEST_QUEUE_LEN, sizeof(DevTestMesg_s));
+    if(DevTaskParams[i].DevTestQue == NULL)
+     {
+      printf("\n\r%sThe %s Test Queue couldn't be created.\n\rHalting !!!%s\n\r", TermRed, PeriphNames[i], TermColorsReset);
+      for(;;);
+     }
+
+    snprintf(TaskName, sizeof(TaskName), "%s Test Task", PeriphNames[i]);
+    result = xTaskCreate(DevTestTask, TaskName, xDEV_TEST_STACK_SIZE, &DevTaskParams[i], xTESTER_PRIORITY, &xDevTestTaskHandles[i]);
+    if(result != pdPASS)
+     {
+      printf("\n\r%sThe %s Test Task couldn't be created.\n\rHalting !!!%s\n\r", TermRed, PeriphNames[i], TermColorsReset);
+      for(;;);
+     }
+
    }
+
+
+ /*       UART Specific Parameters Creating             */
+
   UARTTestSem = xSemaphoreCreateBinary();
   if(UARTTestSem == NULL)
    {
@@ -420,27 +537,9 @@ void TesterInit()
     for(;;);
    }
 
-  result = xTaskCreate(UARTTestTask, "UART Test Task", xDEV_TEST_STACK_SIZE, NULL, xTESTER_PRIORITY, &xUARTTestTaskHandle);
-  if(result != pdPASS)
-   {
-    printf("\n\r%sThe UART Test Task couldn't be created.\n\rHalting !!!%s\n\r", TermRed, TermColorsReset);
-    for(;;);
-   }
 
+  /*       SPI Specific Parameters Creating             */
 
-
-
-
-
-  /*       SPI Task Creating             */
-
-
-  SPITestQue = xQueueCreate(DEV_TEST_QUEUE_LEN, sizeof(PortTestMesg_s));
-  if(SPITestQue == NULL)
-   {
-    printf("\n\r%sThe SPI Test Queue couldn't be created.\n\rHalting !!!%s\n\r", TermRed, TermColorsReset);
-    for(;;);
-   }
   SPITestSem = xSemaphoreCreateBinary();
   if(SPITestSem == NULL)
    {
@@ -448,14 +547,15 @@ void TesterInit()
     for(;;);
    }
 
-  result = xTaskCreate(SPITestTask, "SPI Test Task", xDEV_TEST_STACK_SIZE, NULL, xTESTER_PRIORITY, &xSPITestTaskHandle);
-  if(result != pdPASS)
+
+  /*       I2C Specific Parameters Creating             */
+
+  I2CTestSem = xSemaphoreCreateBinary();
+  if(I2CTestSem == NULL)
    {
-    printf("\n\r%sThe SPI Test Task couldn't be created.\n\rHalting !!!%s\n\r", TermRed, TermColorsReset);
+    printf("\n\r%sThe I2C Test Queue couldn't be created.\n\rHalting !!!%s\n\r", TermRed, TermColorsReset);
     for(;;);
    }
-
-
 
 
  }

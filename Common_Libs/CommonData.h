@@ -134,7 +134,7 @@ typedef struct __attribute__((packed)) TestResult_s // The attribute "__attribut
  extern char const * const ResultColors[];
  extern char const * const ResultMessages[];
 
-
+ extern char const * const PeriphNames[E_NUM_PERIPHS];
 
 
 #define DEF_INIT_VAL 0xEF45AB12

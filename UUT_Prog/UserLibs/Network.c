@@ -102,7 +102,11 @@ void NetworkTask(void *pvParameters)
           TestResult_s TestResult = { .Test_ID = 20, .TestResult =  E_TEST_SUCCEEDED}; // Defiend temperary. will be moved to other place.
           TestResult.Test_ID = TestData.Test_ID;
           TestResult.Periph_B_F = TestData.Periph_B_F;
-          if(TestPattern) free(TestPattern);
+          if(TestPattern)
+           {
+            free(TestPattern);
+            TestPattern = NULL;
+           }
 
           SendResponse(conn, &addr, port, TestResult);                       // Defined here temperary. Will be moved to other place.
 

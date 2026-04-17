@@ -11,7 +11,7 @@
 char const * const ResultColors[] = {TermRed, TermGreen};
 char const * const ResultMessages[] = {"Fail", "Pass"};
 
-char const * const PeriphNames[E_NUM_PERIPHS] = {"UART", "SPI", "I2C", "ADC", "Timer"};
+char const * const PeriphNames[E_NUM_PERIPHS] = {"Timer", "UART", "SPI", "I2C", "ADC"};
 
 
 uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal)
