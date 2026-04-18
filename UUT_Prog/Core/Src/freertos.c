@@ -29,6 +29,7 @@
 #include "CommonData.h"
 #include "Network.h"
 #include "Tester.h"
+#include "SystemLib.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -85,7 +86,7 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+	InitRTPrintf();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */

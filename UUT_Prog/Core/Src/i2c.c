@@ -42,7 +42,7 @@ void MX_I2C1_Init(void)
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
   hi2c1.Init.Timing = 0x6000030D;
-  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.OwnAddress1 = 42;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
   hi2c1.Init.OwnAddress2 = 0;
@@ -85,7 +85,7 @@ void MX_I2C4_Init(void)
   /* USER CODE END I2C4_Init 1 */
   hi2c4.Instance = I2C4;
   hi2c4.Init.Timing = 0x6000030D;
-  hi2c4.Init.OwnAddress1 = 0;
+  hi2c4.Init.OwnAddress1 = 170;
   hi2c4.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c4.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
   hi2c4.Init.OwnAddress2 = 0;
@@ -171,7 +171,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     __HAL_LINKDMA(i2cHandle,hdmarx,hdma_i2c1_rx);
 
     /* I2C1_TX Init */
-    hdma_i2c1_tx.Instance = DMA1_Stream7;
+    hdma_i2c1_tx.Instance = DMA1_Stream6;
     hdma_i2c1_tx.Init.Channel = DMA_CHANNEL_1;
     hdma_i2c1_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_i2c1_tx.Init.PeriphInc = DMA_PINC_DISABLE;

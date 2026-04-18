@@ -19,12 +19,14 @@
 #include "FreeRTOSConfig.h"
 #include "projdefs.h"
 
-
+#include "SystemLib.h"
 
 #define xNETWORK_PRIORITY 0
 #define xNETWORK_STACK_SIZE MAX(configMINIMAL_STACK_SIZE, 512)
 
+#define TEST_REPORT_QUEUE_LEN 5   //  Length of the test report queue.
 
+QueueHandle_t TestReportQueue;
 
 TaskHandle_t xNewtworkTaskHandle;      // Handle to network task.
 
@@ -38,11 +40,22 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
 void NetworkInit()
  {
   BaseType_t result;
+
+
+  TestReportQueue = xQueueCreate(TEST_REPORT_QUEUE_LEN, sizeof(TestResult_s));
+  if(TestReportQueue == NULL)
+   {
+    rtprintf("\n\r%sThe test report queue couldn't be created.\n\rHalting !!!%s\n\r", TermRed, TermColorsReset);
+    for(;;);
+   }
+
+
+
   result = xTaskCreate(NetworkTask, "Network Task", xNETWORK_STACK_SIZE, NULL, xNETWORK_PRIORITY, &xNewtworkTaskHandle);
   if(result != pdPASS)
    {
-	printf("\n\r%sThe network task couldn't be created.%s\n\r", TermRed, TermColorsReset);
-	//for(;;);
+	rtprintf("\n\r%sThe network task couldn't be created.\n\rHalting !!!%s\n\r", TermRed, TermColorsReset);
+	for(;;);
    }
 
  }
@@ -69,7 +82,7 @@ void NetworkTask(void *pvParameters)
 
   remote_ip = netif_ip4_addr(netif);
   ip_str = ip4addr_ntoa(remote_ip);
-  printf("IP Address Assigned: %s\n", ip_str);
+  rtprintf("IP Address Assigned: %s\n", ip_str);
 
   conn = netconn_new(NETCONN_UDP);
   if(conn != NULL)
@@ -89,7 +102,7 @@ void NetworkTask(void *pvParameters)
           ip_str = ip4addr_ntoa(&buf->addr);
           addr = buf->addr;
           port = buf->port;
-          printf("%sReceived data from %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
+          rtprintf("%sReceived data from %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
           TestData_s TestData;
           uint8_t *TestPattern = NULL;
           DecodeData(data, len, &TestData, &TestPattern);
@@ -97,18 +110,23 @@ void NetworkTask(void *pvParameters)
 
           ReqForTest(TestData, TestPattern);
 
-
-
-          TestResult_s TestResult = { .Test_ID = 20, .TestResult =  E_TEST_SUCCEEDED}; // Defiend temperary. will be moved to other place.
-          TestResult.Test_ID = TestData.Test_ID;
-          TestResult.Periph_B_F = TestData.Periph_B_F;
           if(TestPattern)
            {
             free(TestPattern);
             TestPattern = NULL;
            }
 
-          SendResponse(conn, &addr, port, TestResult);                       // Defined here temperary. Will be moved to other place.
+          TestResult_s TestResult = { .Test_ID = TestData.Test_ID, .Periph_B_F = TestData.Periph_B_F, .TestResult =  E_TEST_FAILED}; // Defiend temperary. will be moved to other place.
+//          TestResult.Test_ID = TestData.Test_ID;
+//          TestResult.Periph_B_F = TestData.Periph_B_F;
+//          TestResult.TestResult = E_TEST_FAILED;
+          if(pdPASS == xQueueReceive(TestReportQueue, &TestResult, portMAX_DELAY))  // In the future will be added limmited timout.
+           {
+            SendResponse(conn, &addr, port, TestResult);
+           }
+
+
+          //SendResponse(conn, &addr, port, TestResult);                       // Defined here temperary. Will be moved to other place.
 
          }
 
@@ -118,7 +136,7 @@ void NetworkTask(void *pvParameters)
    }
   else
    {
-    printf("\n\r%sThe connection couldn't be established.%s\n\r", TermRed, TermColorsReset);
+    rtprintf("\n\r%sThe connection couldn't be established.%s\n\r", TermRed, TermColorsReset);
     netconn_delete(conn);
     //for(;;);
    }
@@ -188,7 +206,7 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
     netbuf_delete(buf); // Free buffer after sending
     ip_str = ip4addr_ntoa(ip4addr);
     port = ipport;
-    printf("%sThe response was sent to %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
+    rtprintf("%sThe response was sent to %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
 
     free(Pack);
    }
@@ -210,8 +228,10 @@ void GiveResults(PeriphBitField_s DevResults, PeriphBitField_s DevsUnderTest, ui
 
   TestResult.Test_ID = Test_ID;
   TestResult.Periph_B_F = DevsUnderTest;
+  TestResult.Results_B_F = DevResults;
   TestResult.TestResult = (FinalResult ? E_TEST_SUCCEEDED : E_TEST_FAILED);
 
+  xQueueSend(TestReportQueue, &TestResult, pdMS_TO_TICKS(10));
   // Here must be implemented connection parameters.
   //  .....  *****  .....
   // And than the next line must be uncommented.

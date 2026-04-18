@@ -6,14 +6,17 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../UserLibs/Network.c \
+../UserLibs/SystemLib.c \
 ../UserLibs/Tester.c 
 
 OBJS += \
 ./UserLibs/Network.o \
+./UserLibs/SystemLib.o \
 ./UserLibs/Tester.o 
 
 C_DEPS += \
 ./UserLibs/Network.d \
+./UserLibs/SystemLib.d \
 ./UserLibs/Tester.d 
 
 
@@ -24,7 +27,7 @@ UserLibs/%.o UserLibs/%.su UserLibs/%.cyclo: ../UserLibs/%.c UserLibs/subdir.mk
 clean: clean-UserLibs
 
 clean-UserLibs:
-	-$(RM) ./UserLibs/Network.cyclo ./UserLibs/Network.d ./UserLibs/Network.o ./UserLibs/Network.su ./UserLibs/Tester.cyclo ./UserLibs/Tester.d ./UserLibs/Tester.o ./UserLibs/Tester.su
+	-$(RM) ./UserLibs/Network.cyclo ./UserLibs/Network.d ./UserLibs/Network.o ./UserLibs/Network.su ./UserLibs/SystemLib.cyclo ./UserLibs/SystemLib.d ./UserLibs/SystemLib.o ./UserLibs/SystemLib.su ./UserLibs/Tester.cyclo ./UserLibs/Tester.d ./UserLibs/Tester.o ./UserLibs/Tester.su
 
 .PHONY: clean-UserLibs
 

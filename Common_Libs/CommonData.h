@@ -33,6 +33,9 @@
 #define TermColorsReset   "\033[39;49m"
 
 
+
+
+
 /*
  * Min / Max macros
  */
@@ -120,6 +123,7 @@ typedef struct __attribute__((packed)) TestResult_s // The attribute "__attribut
  {
   uint32_t Test_ID;
   PeriphBitField_s Periph_B_F;
+  PeriphBitField_s Results_B_F;
   TestResType_e TestResult;
  }TestResult_s;
 

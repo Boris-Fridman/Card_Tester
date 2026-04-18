@@ -60,19 +60,6 @@ void SystemClock_Config(void);
 static void MPU_Config(void);
 void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
-int _write(int file, char *ptr, int len)
- {
-  HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len - 1, HAL_MAX_DELAY);
-  if (ptr[len - 1] == '\n')
-   {
-    HAL_UART_Transmit(&huart3, (uint8_t*)"\r\n", 2, HAL_MAX_DELAY);
-   }
-  else
-   {
-    HAL_UART_Transmit(&huart3, (uint8_t*)ptr + len - 1, 1, HAL_MAX_DELAY);
-   }
-return len;
-}
 
 /* USER CODE END PFP */
 

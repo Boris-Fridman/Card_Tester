@@ -30,7 +30,7 @@
 
 /* Within 'USER CODE' section, code will be kept by default at each generation */
 /* USER CODE BEGIN 0 */
-
+#include "SystemLib.h"
 /* USER CODE END 0 */
 
 #ifdef __cplusplus
@@ -119,8 +119,6 @@
 #define CHECKSUM_CHECK_ICMP 0
 /*----- Value in opt.h for CHECKSUM_CHECK_ICMP6: 1 -----*/
 #define CHECKSUM_CHECK_ICMP6 0
-/*----- Default Value for LWIP_DBG_MIN_LEVEL: LWIP_DBG_LEVEL_ALL ---*/
-#define LWIP_DBG_MIN_LEVEL LWIP_DBG_LEVEL_SERIOUS
 /*----- Default Value for NETIF_DEBUG: LWIP_DBG_OFF ---*/
 #define NETIF_DEBUG LWIP_DBG_ON
 /*----- Default Value for ICMP_DEBUG: LWIP_DBG_OFF ---*/
@@ -136,6 +134,12 @@
 /*-----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 #define LWIP_DEBUG 1
+#ifndef LWIP_PLATFORM_DIAG
+#define LWIP_PLATFORM_DIAG(x) do {rtprintf x;} while(0)
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
 /* USER CODE END 1 */
 
 #ifdef __cplusplus

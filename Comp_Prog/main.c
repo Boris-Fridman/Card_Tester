@@ -10,9 +10,16 @@
 #include "Network.h"
     
 
+#define DevsColor   TermBlue //TermYello
+#define ValuesColor TermMagenta 
+#define UnitsColor  TermCyan
+
+
 void PrinthelpMessage(char *ProgName);
 int CheckArgs(int argc, char *argv[], int *NInt, PeriphBitField_s *BFResult);
 void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, int NInt, int TestID);
+void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPattern[]);
+void PrintTestResults(TestResult_s const * const TestInfo);
 void ConvertTime(time_t const * const TimeToConvert, char TimeAsStr[], size_t TimeStrSize);
 
 int main(int argc, char *argv[])
@@ -20,6 +27,8 @@ int main(int argc, char *argv[])
   int NInt;
   int ArgResult;
   int TestID;
+  int i;
+  int NetResult;
   sqlite3 *conn;
   time_t CurrentTime; 
   char timebuf[100];
@@ -36,7 +45,6 @@ int main(int argc, char *argv[])
   //code
   srand(time(NULL));
   printf("printing arguments...\n\r");
-  int i;
   for(i = 0; i < argc; i++)
    {
     printf("%3d: %s\r\n", i, argv[i]);
@@ -54,11 +62,16 @@ int main(int argc, char *argv[])
 
     PrepereData(&TestData, TestPattern, &TimeOut, PeriphBF, NInt, TestID);
 
+    PrintPreperedData(&TestData, TestPattern);
+    
     InitNetwork();
     SendCommandToNetwork(&TestData, TestPattern);
-    WaitForResponse(&ResultData, TimeOut);
+    NetResult = WaitForResponse(&ResultData, TimeOut);
     CloseNetwork();
-
+    if(NetResult == 0)
+     {
+      PrintTestResults(&ResultData);
+     }
     WriteToDataBase(&conn, ResultData.Test_ID, timebuf, ResultData.TestResult);
    }
 
@@ -152,7 +165,7 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
     if(PeriphBF.SPI_bf)   MinFreq = MIN(MinFreq, MIN_SPI_FREQUENCY);
     if(PeriphBF.UART_bf)  MinFreq = MIN(MinFreq, MIN_UART_FREQUENCY);
     MaxAddDelay += 1000 * TestData->Bit_Pattern_Length * 8 / MinFreq;
-    TestData->Bit_Pattern_Length = rand() % MAX_TEST_PATTERN_SIZE;  // Determining Test Pattern Length randomly but less than Maximum permitted length.
+    TestData->Bit_Pattern_Length = MAX(1, rand() % MAX_TEST_PATTERN_SIZE);  // Determining Test Pattern Length randomly starting from 1, but less than Maximum permitted length.
     for(uint8_t i = 0; i< TestData->Bit_Pattern_Length; i++)
      {
       TestPattern[i] = rand() % 256;
@@ -165,7 +178,7 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
    
   if(PeriphBF.Timer_bf)
    {
-    TestData->TestTime = rand() % (1000);    // In ms
+    TestData->TestTime = MAX(10, rand() % (1000));    // In ms
     MaxAddDelay += TestData->TestTime;
    }
   else
@@ -183,9 +196,79 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
   TestData->Num_Interations = NInt;
   TestData->Periph_B_F = PeriphBF;
   TestData->Test_ID = TestID;
-  TestData->TestVoltage = rand() % (5000); // In mV
   *TimeOut = MIN_TIME_OUT + MaxAddDelay;
 
+ }
+
+
+void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPattern[])
+ {
+  uint8_t i;
+  uint8_t Devs;
+
+  printf("\n\r");
+  printf("Running the test...\n\r");
+  printf("Test ID: %d\n\r", TestData->Test_ID);
+  Devs = *(uint8_t *)&TestData->Periph_B_F;
+  printf("The devices will be tested:\n\r");
+  printf(DevsColor);
+  for(i = 0; i < E_NUM_PERIPHS; i++)
+   {
+    if(Devs & (1<<i))
+     {
+      printf("%s\n\r", PeriphNames[i]);
+     }
+   }
+  printf(TermColorsReset);
+  if(Devs & (UART_Flag | SPI_Flag | I2C_Flag ))
+   {
+    printf("Peripheral chekcing pattern: %s0x", ValuesColor);
+    for(i = 0; i < TestData->Bit_Pattern_Length; i++)
+     {
+      printf("%X",TestPattern[i]);
+     }
+    printf("%s\n\r",TermColorsReset);
+   }
+  
+  if(Devs & Timer_Flag)
+   {
+    printf("Timer checking time: %s%d%sms%s\n\r", ValuesColor, TestData->TestTime, UnitsColor, TermColorsReset);
+   }
+  
+  if(Devs & ADC_Flag)
+   {
+    printf("ADC checking voltage: %s%d%smV%s\n\r", ValuesColor, TestData->TestVoltage, UnitsColor, TermColorsReset);
+   }
+
+  printf("The number interrations is: %s%d%s\n\r", ValuesColor, TestData->Num_Interations, TermColorsReset);
+
+  printf("\n\r");
+ }
+
+void PrintTestResults(TestResult_s const * const TestInfo)
+ {
+  uint8_t i;
+  uint8_t Devs, Results;
+  bool TRes;
+  printf("The test Results:\n\r");
+  printf("Test ID: %d\n\r", TestInfo->Test_ID);
+
+  Devs = *(uint8_t *)&TestInfo->Periph_B_F;
+  Results = *(uint8_t *)&TestInfo->Results_B_F;
+
+  printf("The devices will be tested:\n\r");
+  for(i = 0; i < E_NUM_PERIPHS; i++)
+   {
+    if(Devs & (1<<i))
+     {
+      printf("%s%s:    %s", DevsColor, PeriphNames[i], TermColorsReset);
+      TRes = Results  & (1<<i);
+      printf("%s%s%s\n\r", ResultColors[TRes], ResultMessages[TRes], TermColorsReset);
+     }
+   }
+  printf(TermColorsReset);
+  TRes = TestInfo->TestResult == E_TEST_SUCCEEDED;
+  printf("The final Result: %s%s%s\n\r", ResultColors[TRes], ResultMessages[TRes], TermColorsReset);  
  }
 
 void ConvertTime(time_t const * const TimeToConvert, char TimeAsStr[], size_t TimeStrSize)

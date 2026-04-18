@@ -1,6 +1,5 @@
-../Core/Src/main.c:63:5:_write	2
-../Core/Src/main.c:88:5:main	1
-../Core/Src/main.c:159:6:SystemClock_Config	4
-../Core/Src/main.c:217:6:MPU_Config	1
-../Core/Src/main.c:252:6:HAL_TIM_PeriodElapsedCallback	2
-../Core/Src/main.c:270:6:Error_Handler	1
+../Core/Src/main.c:75:5:main	1
+../Core/Src/main.c:146:6:SystemClock_Config	4
+../Core/Src/main.c:204:6:MPU_Config	1
+../Core/Src/main.c:239:6:HAL_TIM_PeriodElapsedCallback	2
+../Core/Src/main.c:257:6:Error_Handler	1
