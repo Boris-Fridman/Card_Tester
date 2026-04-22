@@ -47,7 +47,7 @@
  * Div macros
  */
 
-#define DIV_RND   (X,Y) ( ((X) + (Y) / 2) / (Y) )     /* Deviation with rounding.      10/6 will give 2 and 10/3 will give 3  */
+#define DIV_RND(X,Y)    ( ((X) + (Y) / 2) / (Y) )     /* Deviation with rounding.      10/6 will give 2 and 10/3 will give 3  */
 #define DIV_RND_UP(X,Y) ( ((X) + (Y) - 1) / (Y) )     /* Deviation with rounding up.   10/6 will give 2 and 10/3 will give 4  */
 #define DIV_RND_DN(X,Y) ( (X) / (Y)             )     /* Deviation with rounding down. 10/6 will give 1 and 10/3 will give 3 Regular deviation equal to regular "/". Is defined for compliation the previous macros deviations */
 
@@ -56,13 +56,16 @@
  * Test data definitions
  */
 
-#define MAX_TEST_PATTERN_SIZE   100                       /* Maximum permitted Length of pattern. */
-#define MIN_TIME_OUT            1000        /* ms  */     /* Minimal timeout to wait for response. */
-
 #define MAX_POSSIBLE_FREAUENCY  1000000000  /* Hz */      /* Maximal possible frequency used for calculation maximal timeout */
 #define MIN_I2C_FREQUENCY       100000      /* Hz */
 #define MIN_SPI_FREQUENCY       200000      /* Hz */
 #define MIN_UART_FREQUENCY      50000       /* Hz */
+
+#define MAX_TEST_PATTERN_SIZE   100                       /* Maximum permitted Length of pattern. */
+#define MIN_TIME_OUT            1000        /* ms  */     /* Minimal timeout to wait for response. */
+
+#define MAX_ADC_CHECK_TIME      1           /* ms  */     /* Maximal time period required for testing ADC in one interration.*/
+
 
 /*
  * Internet information for sending and receiving call-events.
@@ -77,7 +80,6 @@
 #define MIN_SEND_MSG_SIZE      ( sizeof(TestData_s) + CRC_SIZE )
 #define MAX_RECV_MSG_SIZE      ( sizeof(TestResult_s) + CRC_SIZE )
 #define MIN_RECV_MSG_SIZE      ( sizeof(TestResult_s) + CRC_SIZE )
-
 
 
 typedef enum __attribute__((__packed__)) PeriphType_e  // The attribute "__attribute__((__packed__))" is defined to make the enumeration to be in one byte to ensure the correct data length while sending. 
@@ -96,6 +98,14 @@ typedef enum __attribute__((__packed__)) TestResType_e  // The attribute "__attr
   E_TEST_SUCCEEDED =    0,
   E_TEST_FAILED    = 0xFF
  }TestResType_e;
+
+
+typedef enum VoltsConvMethod_e  // Conversion method between voltage and rough data.
+ {
+  E_IDEAL_CONV,    // Method of ideal conversion when the ADC or DAC are work ideally and the data can be converted by the theoretical formula.
+  E_LINEAR_CONV,   // Conversion by using the linear equation y=ax+b when the coefficients a and b are found by linear regression or any other method for getting an approximate linear equation.
+  E_POLYNOM_CONV   // Conversion by the tailor polynomial approximation y= ∑aₙ𐄁xⁿ = a₀+ a₁x+a₂x²+a₃x³+a₄x⁴+a₅x⁵+a₆x⁶+a₇x⁷+a₈x⁸+a₉x⁹+...  .
+ }VoltsConvMethod_e;
 
 
 typedef struct PeriphBitField_s
@@ -126,6 +136,8 @@ typedef struct __attribute__((packed)) TestResult_s // The attribute "__attribut
   PeriphBitField_s Results_B_F;
   TestResType_e TestResult;
  }TestResult_s;
+
+
 
 
 #define Timer_Flag (1 << E_TIMER)

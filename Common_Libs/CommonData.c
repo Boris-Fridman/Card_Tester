@@ -52,3 +52,8 @@ bool CRC_Correct(uint8_t buf[], size_t len)
   return CalcCRC == RecvCRC;
  }
 
+
+
+
+
+//  ₙⁿ𐄁 ⁰¹²³⁴⁵⁶⁷⁸  ₀₁₂₃₄₅₆₇₈₉  ⩽⩾

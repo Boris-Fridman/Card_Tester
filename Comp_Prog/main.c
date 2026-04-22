@@ -44,11 +44,11 @@ int main(int argc, char *argv[])
   
   //code
   srand(time(NULL));
-  printf("printing arguments...\n\r");
-  for(i = 0; i < argc; i++)
-   {
-    printf("%3d: %s\r\n", i, argv[i]);
-   }
+  // printf("printing arguments...\n\r");
+  // for(i = 0; i < argc; i++)
+  //  {
+  //   printf("%3d: %s\r\n", i, argv[i]);
+  //  }
   
   ArgResult = CheckArgs(argc, argv, &NInt, &PeriphBF);
   if(ArgResult == 0)
@@ -85,6 +85,7 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
   char *st, ch;
   int nintres;
   bool nintloaded = false;
+  memset(BFResult, 0, sizeof(PeriphBitField_s));
   
   for(i = 1; i < argc; i++)
    {
@@ -124,6 +125,12 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
        }
      }
    }
+  if(*(uint8_t *)BFResult == 0) // No prepheral loaded
+   {
+    fprintf(stderr, "No peripheral was selected.\n\r");
+    PrinthelpMessage(argv[0]);
+    return 1;
+   }
   if(!nintloaded)
    {
     if(nintres ==  EOF)
@@ -131,7 +138,7 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
     else
      fprintf(stderr, "Was not loaded.");
     fprintf(stderr, "Using default number inteructions that is \"1\"\n\r");
-    *NInt = -1;
+    *NInt = 1;
    }            
 
   return 0;
@@ -187,7 +194,7 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
    }
   if(PeriphBF.ADC_bf)
    {
-    TestData->TestVoltage = rand() % (5000); // In mV
+    TestData->TestVoltage = 3000;  //1183;  //rand() % (3200); // In mV
    }
   else
    {
@@ -225,7 +232,7 @@ void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPatt
     printf("Peripheral chekcing pattern: %s0x", ValuesColor);
     for(i = 0; i < TestData->Bit_Pattern_Length; i++)
      {
-      printf("%X",TestPattern[i]);
+      printf("%02X",TestPattern[i]);
      }
     printf("%s\n\r",TermColorsReset);
    }

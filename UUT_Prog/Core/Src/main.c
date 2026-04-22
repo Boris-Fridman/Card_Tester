@@ -31,7 +31,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "CommonData.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -107,10 +107,10 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM1_Init();
   MX_I2C1_Init();
-  MX_I2C4_Init();
   MX_USART6_UART_Init();
   MX_UART4_Init();
   MX_SPI4_Init();
+  MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
 #ifdef DEBUG
   __HAL_DBGMCU_FREEZE_TIM6();  // Prevents jumping to the timer handler during stepping in debugging.
@@ -118,6 +118,10 @@ int main(void)
   __HAL_DBGMCU_FREEZE_TIM2();  // Prevents jumping to the timer handler during stepping in debugging.
   //__HAL_FREEZE_ETH_DBGMCU();   // Prevents jumping to the timer handler during stepping in debugging.
 #endif
+
+  printf("\033[2J\033[H");  //ansi clear screen.
+  printf(TermColorsReset);  //ansi reset colors in screen.
+
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */
