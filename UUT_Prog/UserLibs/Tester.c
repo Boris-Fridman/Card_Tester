@@ -72,7 +72,7 @@ typedef struct TestReqMesg_s
 
 typedef struct DevTestInfo_s
  {
-  uint32_t TestVoltage;
+  int32_t TestVoltage;
   uint32_t TestTime;
   uint8_t Num_Interations;
   uint8_t Bit_Pattern_Length;
@@ -381,7 +381,7 @@ static SemaphoreHandle_t I2CTestSem;
  *
  * returns "true" if the test passed. Otherwise returns "false".
  */
-#define SALVE_ADDR 0xAA  //0x55
+#define SALVE_ADDR 0xAA
 bool TestI2C(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
  {
   uint8_t RecvPat[MAX_TEST_PATTERN_SIZE];
@@ -453,57 +453,59 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 
 #define REF_INT_VOLT       1180 // mV     1.18v ⩽ Vrefint ⩽ 1.24v
-#define MAX_ROUGH_VOLTAGE ((1<<12) - 1)
+#define MAX_ROUGH_VOLTAGE ((1<<12))
 
 #define VREFIN_CAL    (*(VREFINT_CAL_ADDR_CMSIS))
 
 //VREFINT_CAL_ADDR_CMSIS
 static SemaphoreHandle_t ADCTestSem;
 
+#define PERMITTED_ERROR 30  // mV
 
-
-bool TestADC(uint8_t NInt, uint32_t TestVoltage)
+bool TestADC(uint8_t NInt, int32_t TestVoltage)
  {
   bool TestResult;
   uint8_t i;
   uint32_t MaxTimeToWait;
   uint32_t RoughVoltageDAC;
   uint32_t RoughVrefInt = 0, ADCRoughData = 0;
-  uint32_t VrefInt;
-  ADC_ChannelConfTypeDef TerstedChannel = {.Channel = ADC_CHANNEL_0,       .Offset = 0, .Rank = ADC_REGULAR_RANK_1, .SamplingTime = ADC_SAMPLETIME_15CYCLES};
+  int32_t VrefInt, ADCVoltage;
   ADC_ChannelConfTypeDef VrefintChannel = {.Channel = ADC_CHANNEL_VREFINT, .Offset = 0, .Rank = ADC_REGULAR_RANK_1, .SamplingTime = ADC_SAMPLETIME_15CYCLES};
-  //uint32_t RoughVoltageADC;
+  ADC_ChannelConfTypeDef TerstedChannel = {.Channel = ADC_CHANNEL_0,       .Offset = 0, .Rank = ADC_REGULAR_RANK_1, .SamplingTime = ADC_SAMPLETIME_15CYCLES};
   MaxTimeToWait = 10;  // Must be rechecked.
 
   //RoughVoltageDAC = TestVoltage*0x1000/3243+29;  //  TestVoltage*0x1000/3200
   xSemaphoreTake(ADCTestSem, 0);  // Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt.
+
+
+  TestResult = !HAL_ADC_ConfigChannel(&INSPECTED_ADC, &VrefintChannel);
+  TestResult = !HAL_ADC_Start_DMA(&INSPECTED_ADC, &RoughVrefInt, 1);
+
+  TestResult = xSemaphoreTake(ADCTestSem, pdMS_TO_TICKS(MaxTimeToWait));
+  TestResult = !HAL_ADC_Stop_DMA(&INSPECTED_ADC);
+  VrefInt = DIV_RND(3300 * VREFIN_CAL , RoughVrefInt);
+
+  RoughVoltageDAC = DIV_RND(TestVoltage*MAX_ROUGH_VOLTAGE, VrefInt);
+  TestResult = !HAL_DAC_Start_DMA(&INSPECTOR_DAC, DAC_CHANNEL_1, &RoughVoltageDAC, 1, DAC_ALIGN_12B_R);
+  TestResult = !HAL_ADC_ConfigChannel(&INSPECTED_ADC, &TerstedChannel);
+  TestResult = xSemaphoreTake(ADCTestSem, pdMS_TO_TICKS(MaxTimeToWait));
   for(i = 0; i < NInt; i++)
    {
-    TestResult = !HAL_ADC_ConfigChannel(&INSPECTED_ADC, &VrefintChannel);
-    TestResult = !HAL_ADC_Start_DMA(&INSPECTED_ADC, &RoughVrefInt, 1);
-    TestResult = xSemaphoreTake(ADCTestSem, pdMS_TO_TICKS(MaxTimeToWait));
-    TestResult = !HAL_ADC_Stop_DMA(&INSPECTED_ADC);
 
-    VrefInt = DIV_RND(3300 * VREFIN_CAL , RoughVrefInt);
-
-    RoughVoltageDAC = DIV_RND(TestVoltage*(1<<12), VrefInt);
-    TestResult = !HAL_DAC_SetValue(&INSPECTOR_DAC, DAC_CHANNEL_1, DAC_ALIGN_12B_R, RoughVoltageDAC);
-    if(!TestResult) break;
-    TestResult = !HAL_DAC_Start(&INSPECTOR_DAC, DAC_CHANNEL_1);
-    if(!TestResult) break;
-
-    TestResult = !HAL_ADC_ConfigChannel(&INSPECTED_ADC, &TerstedChannel);
-    vTaskDelay(1);
     TestResult = !HAL_ADC_Start_DMA(&INSPECTED_ADC, &ADCRoughData, 1);
     if(!TestResult) break;
     TestResult = xSemaphoreTake(ADCTestSem, pdMS_TO_TICKS(MaxTimeToWait));
     if(!TestResult) break;
     TestResult = !HAL_ADC_Stop_DMA(&INSPECTED_ADC);
     if(!TestResult) break;
-
-    TestResult = !HAL_DAC_Stop(&INSPECTOR_DAC, DAC_CHANNEL_1);
+    ADCVoltage = DIV_RND(ADCRoughData * VrefInt, MAX_ROUGH_VOLTAGE);
+    TestResult = abs(ADCVoltage - TestVoltage) <= PERMITTED_ERROR;
     if(!TestResult) break;
+
    }
+  TestResult = !HAL_DAC_Stop_DMA(&INSPECTOR_DAC, DAC_CHANNEL_1);
+
+
   return TestResult;
  }
 
@@ -515,7 +517,23 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 
   if(hadc == &INSPECTED_ADC)
    {
-	  xSemaphoreGiveFromISR(ADCTestSem, &xHigherPriorityTaskWoken);
+    xSemaphoreGiveFromISR(ADCTestSem, &xHigherPriorityTaskWoken);
+   }
+ }
+
+
+
+
+void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdacp)
+ {
+  static BaseType_t xHigherPriorityTaskWoken;
+  xHigherPriorityTaskWoken = pdFALSE;
+  DAC_HandleTypeDef *p1, *p2;
+  p1 = hdacp;
+  p2 = (&INSPECTOR_DAC);
+  if(hdacp == &INSPECTOR_DAC)
+   {
+    xSemaphoreGiveFromISR(ADCTestSem, &xHigherPriorityTaskWoken);
    }
  }
 

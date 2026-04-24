@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
   int NInt;
   int ArgResult;
   int TestID;
-  int i;
+  //int i;
   int NetResult;
   sqlite3 *conn;
   time_t CurrentTime; 

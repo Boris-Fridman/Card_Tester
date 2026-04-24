@@ -64,7 +64,7 @@
 #define MAX_TEST_PATTERN_SIZE   100                       /* Maximum permitted Length of pattern. */
 #define MIN_TIME_OUT            1000        /* ms  */     /* Minimal timeout to wait for response. */
 
-#define MAX_ADC_CHECK_TIME      1           /* ms  */     /* Maximal time period required for testing ADC in one interration.*/
+#define MAX_ADC_CHECK_TIME      50          /* µs  */     /* Maximal time period required for testing ADC in one interration is given in micorseconds.*/
 
 
 /*
@@ -121,8 +121,8 @@ typedef struct PeriphBitField_s
  typedef struct __attribute__((packed)) TestData_s // The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending.
  {
   uint32_t Test_ID;
-  uint32_t TestVoltage;
   uint32_t TestTime;
+  int32_t TestVoltage;
   PeriphBitField_s Periph_B_F;
   uint8_t Num_Interations;
   uint8_t Bit_Pattern_Length;

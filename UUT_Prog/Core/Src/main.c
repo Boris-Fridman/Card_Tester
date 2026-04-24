@@ -111,13 +111,18 @@ int main(void)
   MX_UART4_Init();
   MX_SPI4_Init();
   MX_I2C2_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 #ifdef DEBUG
-  __HAL_DBGMCU_FREEZE_TIM6();  // Prevents jumping to the timer handler during stepping in debugging.
-  __HAL_DBGMCU_FREEZE_TIM1();  // Prevents jumping to the timer handler during stepping in debugging.
-  __HAL_DBGMCU_FREEZE_TIM2();  // Prevents jumping to the timer handler during stepping in debugging.
-  //__HAL_FREEZE_ETH_DBGMCU();   // Prevents jumping to the timer handler during stepping in debugging.
+//  __HAL_DBGMCU_FREEZE_TIM6();  // Prevents jumping to the timer handler during stepping in debugging.
+//  __HAL_DBGMCU_FREEZE_TIM7();  // Prevents jumping to the timer handler during stepping in debugging.
+//  __HAL_DBGMCU_FREEZE_TIM1();  // Prevents jumping to the timer handler during stepping in debugging.
+//  __HAL_DBGMCU_FREEZE_TIM2();  // Prevents jumping to the timer handler during stepping in debugging.
+//  //__HAL_FREEZE_ETH_DBGMCU();   // Prevents jumping to the timer handler during stepping in debugging.
 #endif
+
+
+  HAL_TIM_Base_Start(&htim6);
 
   printf("\033[2J\033[H");  //ansi clear screen.
   printf(TermColorsReset);  //ansi reset colors in screen.
@@ -234,7 +239,7 @@ void MPU_Config(void)
 
 /**
   * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM6 interrupt took place, inside
+  * @note   This function is called  when TIM7 interrupt took place, inside
   * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
   * a global variable "uwTick" used as application time base.
   * @param  htim : TIM handle
@@ -245,7 +250,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 0 */
 
   /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM6)
+  if (htim->Instance == TIM7)
   {
     HAL_IncTick();
   }
