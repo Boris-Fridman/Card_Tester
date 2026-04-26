@@ -112,15 +112,15 @@ int main(void)
   MX_SPI4_Init();
   MX_I2C2_Init();
   MX_TIM6_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 #ifdef DEBUG
-//  __HAL_DBGMCU_FREEZE_TIM6();  // Prevents jumping to the timer handler during stepping in debugging.
-//  __HAL_DBGMCU_FREEZE_TIM7();  // Prevents jumping to the timer handler during stepping in debugging.
-//  __HAL_DBGMCU_FREEZE_TIM1();  // Prevents jumping to the timer handler during stepping in debugging.
-//  __HAL_DBGMCU_FREEZE_TIM2();  // Prevents jumping to the timer handler during stepping in debugging.
-//  //__HAL_FREEZE_ETH_DBGMCU();   // Prevents jumping to the timer handler during stepping in debugging.
+  __HAL_DBGMCU_FREEZE_TIM6();  // Prevents jumping to the timer handler during stepping in debugging.
+  __HAL_DBGMCU_FREEZE_TIM7();  // Prevents jumping to the timer handler during stepping in debugging.
+  __HAL_DBGMCU_FREEZE_TIM1();  // Prevents jumping to the timer handler during stepping in debugging.
+  __HAL_DBGMCU_FREEZE_TIM2();  // Prevents jumping to the timer handler during stepping in debugging.
+  //__HAL_FREEZE_ETH_DBGMCU();   // Prevents jumping to the timer handler during stepping in debugging.
 #endif
-
 
   HAL_TIM_Base_Start(&htim6);
 

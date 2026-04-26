@@ -16,6 +16,7 @@
 ../UserLibs/Tester.c:527:6:HAL_DAC_ConvCpltCallbackCh1	2
 ../UserLibs/Tester.c:541:10:DAC_VoltsToRoghData	4
 ../UserLibs/Tester.c:553:10:ADC_RoghDataToVolts	1
-../UserLibs/Tester.c:565:6:TestTimer	1
-../UserLibs/Tester.c:579:6:DevTestTask	13
-../UserLibs/Tester.c:656:6:TesterInit	12
+../UserLibs/Tester.c:573:6:TestTimer	9
+../UserLibs/Tester.c:609:6:HAL_TIM_IC_CaptureCallback	4
+../UserLibs/Tester.c:649:6:DevTestTask	13
+../UserLibs/Tester.c:726:6:TesterInit	13

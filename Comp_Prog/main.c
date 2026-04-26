@@ -185,7 +185,7 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
    
   if(PeriphBF.Timer_bf)
    {
-    TestData->TestTime = MAX(10, rand() % (1000));    // In ms
+    TestData->TestTime = MAX(10, rand() % (60001));    // In ms
     MaxAddDelay += TestData->TestTime;
    }
   else
@@ -194,7 +194,7 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
    }
   if(PeriphBF.ADC_bf)
    {
-    TestData->TestVoltage = 3000;  //1183;  //rand() % (3200); // In mV
+    TestData->TestVoltage = rand() % (3200); // In mV
    }
   else
    {

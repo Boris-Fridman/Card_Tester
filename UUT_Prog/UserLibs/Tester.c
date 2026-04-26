@@ -460,7 +460,7 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c)
 //VREFINT_CAL_ADDR_CMSIS
 static SemaphoreHandle_t ADCTestSem;
 
-#define PERMITTED_ERROR 30  // mV
+#define ADC_PERMITTED_ERROR 30  // mV
 
 bool TestADC(uint8_t NInt, int32_t TestVoltage)
  {
@@ -499,7 +499,7 @@ bool TestADC(uint8_t NInt, int32_t TestVoltage)
     TestResult = !HAL_ADC_Stop_DMA(&INSPECTED_ADC);
     if(!TestResult) break;
     ADCVoltage = DIV_RND(ADCRoughData * VrefInt, MAX_ROUGH_VOLTAGE);
-    TestResult = abs(ADCVoltage - TestVoltage) <= PERMITTED_ERROR;
+    TestResult = abs(ADCVoltage - TestVoltage) <= ADC_PERMITTED_ERROR;
     if(!TestResult) break;
 
    }
@@ -561,11 +561,81 @@ uint32_t ADC_RoghDataToVolts(uint32_t RoghData, VoltsConvMethod_e ConvMethod)
  * *************************************************************************************************************
 */
 
+static SemaphoreHandle_t TIMTestSem;
+
+
+#define TIM_PERMITTED_ERROR  2
+
+static int32_t MeasuredTime = 0;
+static uint16_t cnt;
+static uint16_t NPerPairs = 2;
 
 bool TestTimer(uint8_t NInt, uint32_t TestTime)
  {
-  return false;
+  bool TestResult;
+  uint8_t i;
+  uint32_t MaxTimeToWait;
+  if(TestTime<=4)
+   return false;
+  MaxTimeToWait = MAX(10, DIV_RND_UP(TestTime*4, 1000));  // Must be rechecked.
+  NPerPairs = 2*MAX(1, 1000/TestTime);
+  xSemaphoreTake(TIMTestSem, 0);  // Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt.
+
+  HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
+  TestResult = !SetPeriod(&htim1,TIM_CHANNEL_1, TestTime);
+
+  cnt = 0;
+  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_2);
+
+  for(i = 0; i < NInt; i++)
+   {
+    cnt = 0;
+    TestResult = xSemaphoreTake(TIMTestSem, pdMS_TO_TICKS(MaxTimeToWait));
+    if(!TestResult) break;
+    TestResult = (abs(TestTime - MeasuredTime) < TIM_PERMITTED_ERROR);
+    if(!TestResult) break;
+   }
+
+  HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_2);
+  //HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+
+  return TestResult;
  }
+
+
+
+
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+ {
+  static int32_t v[2];
+  static bool state = false;
+  static BaseType_t xHigherPriorityTaskWoken;
+  xHigherPriorityTaskWoken = pdFALSE;
+
+  if(htim == &htim2)
+   {
+    if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
+     {
+      //v = htim->Instance->CCR2;
+      //v = htim->Instance->CNT;
+      //v = __HAL_TIM_GET_COUNTER(htim);
+      v[state] =  HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+      state = !state;
+      MeasuredTime = abs(v[1]-v[0]);
+      cnt++;
+      if(cnt >= NPerPairs)
+       {
+        xSemaphoreGiveFromISR(TIMTestSem, &xHigherPriorityTaskWoken);
+        cnt = 0;
+       }
+
+      //__HAL_TIM_SET_COUNTER(htim, 0);
+     }
+   }
+ }
+
+
 
 /*
  * *************************************************************************************************************
@@ -747,6 +817,17 @@ void TesterInit()
     rtprintf("\n\r%sThe ADC Test Semaphore couldn't be created.\n\rHalting !!!%s\n\r", TermRed, TermColorsReset);
     for(;;);
    }
+
+
+  /*       Timer Specific Parameters Creating             */
+
+  TIMTestSem = xSemaphoreCreateBinary();
+  if(TIMTestSem == NULL)
+   {
+    rtprintf("\n\r%sThe Timer Test Semaphore couldn't be created.\n\rHalting !!!%s\n\r", TermRed, TermColorsReset);
+    for(;;);
+   }
+
 
  }
 
