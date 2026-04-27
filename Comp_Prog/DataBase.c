@@ -11,12 +11,12 @@ int CreateLoadDatabase(sqlite3 **conn)
  {
   int result;
   if(*conn == NULL)
-   return -2;  // The pointer to the database wasn't given.
+   return -2;  /* The pointer to the database wasn't given. */
   result = sqlite3_open(DB_FILENAME, conn);
   if(result != SQLITE_OK)
    {
     fprintf(stderr, "%sCannot open database: %s%s\n\r", TermRed, sqlite3_errmsg(*conn), TermColorsReset);
-    return -1;  // Couldn't create the database.
+    return -1;  /* Couldn't create the database. */
    }
   else
    {
@@ -27,7 +27,7 @@ int CreateLoadDatabase(sqlite3 **conn)
       fprintf(stderr, "%sCannot prepare the table: %s%s\n\r", TermRed, sqlite3_errmsg(*conn), TermColorsReset);
      }
     sqlite3_close(*conn);
-    return 0; // The database was loaded successfully.
+    return 0; /* The database was loaded successfully. */
    }
  }
 

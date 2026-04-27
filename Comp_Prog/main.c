@@ -125,7 +125,7 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
        }
      }
    }
-  if(*(uint8_t *)BFResult == 0) // No prepheral loaded
+  if(*(uint8_t *)BFResult == 0) /* No prepheral loaded */
    {
     fprintf(stderr, "No peripheral was selected.\n\r");
     PrinthelpMessage(argv[0]);
@@ -146,7 +146,6 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
 
 void PrinthelpMessage(char *ProgName)
  {
-  //UNUSED(ProgName);
   char *fname = basename(ProgName);
   printf("To use the program it's needed to type the next parameters:\n\r");
   printf("%s [test [t][u][s][i][a][r]] [n] \n\r", fname);

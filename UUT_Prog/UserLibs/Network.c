@@ -24,11 +24,11 @@
 #define xNETWORK_PRIORITY 0
 #define xNETWORK_STACK_SIZE MAX(configMINIMAL_STACK_SIZE, 512)
 
-#define TEST_REPORT_QUEUE_LEN 5   //  Length of the test report queue.
+#define TEST_REPORT_QUEUE_LEN 5        /*  Length of the test report queue. */
 
 QueueHandle_t TestReportQueue;
 
-TaskHandle_t xNewtworkTaskHandle;      // Handle to network task.
+TaskHandle_t xNewtworkTaskHandle;      /*  Handle to network task.          */
 
 
 void NetworkTask(void *pvParameters);
@@ -75,7 +75,6 @@ void NetworkTask(void *pvParameters)
   struct netif *netif = &gnetif;
   ip4_addr_t const *remote_ip;
   err_t error;
-//  char *msg = "Hello from STM32 UDP Client";
 
   Wait_for_DHCP();
   netif_set_hostname(&gnetif, HOST_NAME);
@@ -96,7 +95,7 @@ void NetworkTask(void *pvParameters)
         error = netconn_recv(conn, &buf);
         if (error == ERR_OK)
          {
-          // Process received data in buf->p->payload
+          /* Process received data in buf->p->payload */
 
           netbuf_data(buf, &data, &len);
           ip_str = ip4addr_ntoa(&buf->addr);
@@ -152,14 +151,14 @@ void Wait_for_DHCP(void)
   extern struct netif gnetif;
   while (gnetif.ip_addr.addr == 0)
    {
-    vTaskDelay(pdMS_TO_TICKS(100)); // Wait until DHCP assigns an IP
+    vTaskDelay(pdMS_TO_TICKS(100)); /* Wait until DHCP assigns an IP */
    }
   while (!dhcp_supplied_address(&gnetif))
    {
-	vTaskDelay(pdMS_TO_TICKS(100));    // Now safe to start UDP communication
+	vTaskDelay(pdMS_TO_TICKS(100));    /* Now safe to start UDP communication */
    }
 
-  // Proceed with Netconn UDP client...
+  /* Proceed with Netconn UDP client... */
  }
 
 
@@ -203,7 +202,7 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
     buf = netbuf_new();
     netbuf_ref(buf, Pack, sizeof(TestResult_s) + sizeof(uint32_t));
     netconn_sendto(conn, buf, ip4addr, ipport);
-    netbuf_delete(buf); // Free buffer after sending
+    netbuf_delete(buf); /* Freeing buffer after sending */
     ip_str = ip4addr_ntoa(ip4addr);
     port = ipport;
     rtprintf("%sThe response was sent to %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
@@ -218,13 +217,13 @@ void GiveResults(PeriphBitField_s DevResults, PeriphBitField_s DevsUnderTest, ui
  {
   TestResult_s TestResult;
   uint8_t *ResultsBits;
-  uint8_t *DUTBits;  // DUT - Devices Under Test.
+  uint8_t *DUTBits;  /* DUT - Devices Under Test. */
   bool FinalResult;
 
   ResultsBits = (uint8_t*)&DevResults;
   DUTBits = (uint8_t*)&DevsUnderTest;
 
-  FinalResult = (!((*ResultsBits)^(*DUTBits)));  //(!(~(~((*ResultsBits)^(*DUTBits))))) - Bit-xoring devices under test with existing devices will give "1" in fails. Boolean not ("!") will give true if all bits were zeros that means all devices passed the test. otherwise will be given "false".
+  FinalResult = (!((*ResultsBits)^(*DUTBits)));  /* (!(~(~((*ResultsBits)^(*DUTBits))))) - Bit-xoring devices under test with existing devices will give "1" in fails. Boolean not ("!") will give true if all bits were zeros that means all devices passed the test. otherwise will be given "false". */
 
   TestResult.Test_ID = Test_ID;
   TestResult.Periph_B_F = DevsUnderTest;

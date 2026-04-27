@@ -31,30 +31,40 @@
 
 
 
-#define xTESTER_PRIORITY       0                                          // Priority of the tester tasks.
-#define xTESTER_STACK_SIZE     MAX(configMINIMAL_STACK_SIZE, 1024)        // Stack size of the main-test-task.
+#define xTESTER_PRIORITY       0                                          /* Priority of the tester tasks. */
+#define xTESTER_STACK_SIZE     MAX(configMINIMAL_STACK_SIZE, 1024)        /* Stack size of the main-test-task. */
 
 
-#define xDEV_TEST_STACK_SIZE   MAX(configMINIMAL_STACK_SIZE, 512)         // Stack size of the single-dev-test-task.
-#define DEV_TEST_QUEUE_LEN     3 /*Will be changed to 1 in the future.*/  // Length of the queue from the network-task to the main-test-task.
+#define xDEV_TEST_STACK_SIZE   MAX(configMINIMAL_STACK_SIZE, 512)         /* Stack size of the single-dev-test-task. */
+#define DEV_TEST_QUEUE_LEN     3 /*Will be changed to 1 in the future.*/  /* Length of the queue from the network-task to the main-test-task. */
 
-#define TEST_REQ_QUEUE_LEN     5                                          // Length of the queue of requests from the main-test-task to the single-dev-test-task.
-#define TEST_RESP_QUEUE_LEN   (DEV_TEST_QUEUE_LEN * E_NUM_PERIPHS)        // Length of the queue of responses from the single-dev-test-task to the main-test-task.
-
-
+#define TEST_REQ_QUEUE_LEN     5                                          /* Length of the queue of requests from the main-test-task to the single-dev-test-task. */
+#define TEST_RESP_QUEUE_LEN   (DEV_TEST_QUEUE_LEN * E_NUM_PERIPHS)        /* Length of the queue of responses from the single-dev-test-task to the main-test-task. */
 
 
-#define INSPECTOR_UART  huart6
-#define INSPECTED_UART  huart4
 
-#define INSPECTOR_SPI  hspi1
-#define INSPECTED_SPI  hspi4
 
-#define INSPECTOR_I2C  hi2c1
-#define INSPECTED_I2C  hi2c2
+#define INSPECTOR_UART               huart6
+#define INSPECTED_UART               huart4
 
-#define INSPECTOR_DAC  hdac
-#define INSPECTED_ADC  hadc1
+#define INSPECTOR_SPI                hspi1
+#define INSPECTED_SPI                hspi4
+
+#define INSPECTOR_I2C                hi2c1
+#define INSPECTED_I2C                hi2c2
+
+#define INSPECTOR_DAC                hdac
+#define INSPECTED_ADC                hadc1
+
+#define INSPECTOR_TIM                htim1
+#define INSPECTED_TIM                htim2
+
+#define INSPECTOR_TIM_CHANNEL        TIM_CHANNEL_1
+#define INSPECTED_TIM_CHANNEL        TIM_CHANNEL_2
+
+#define INSPECTOR_TIM_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_1
+#define INSPECTED_TIM_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_2
+
 
 
 typedef struct TestReqMesg_s
@@ -91,9 +101,9 @@ typedef struct DevTaskParams_s
  }DevTaskParams_s;
 
 
-TaskHandle_t xTesterTaskHandle;                   // Handle to Tester      task.
+TaskHandle_t xTesterTaskHandle;                   /* Handle to Tester      task. */
 
-TaskHandle_t xDevTestTaskHandles[E_NUM_PERIPHS];  // Handles to UART, SPI,I2C, ADC and Timer tasks.  -- Will be implemented in the future.
+TaskHandle_t xDevTestTaskHandles[E_NUM_PERIPHS];  /* Handles to UART, SPI,I2C, ADC and Timer tasks.  -- Will be implemented in the future. */
 
 QueueHandle_t TestReqQueue;
 QueueHandle_t TestRespQueue;
@@ -159,9 +169,9 @@ void TesterTask(void *pvParameters)
         if(pdPASS == xQueueReceive(TestRespQueue, &RespMsg, portMAX_DELAY))
          {
 
-          *(uint8_t*)&RespondedDevs |= (1 << RespMsg.DevType);                                                // Marking the device as responded.
-          *(uint8_t*)&DevResults |= ((1 << RespMsg.DevType))*((uint8_t)RespMsg.Result);                       // Marking the device's answer
-          if(!memcmp((void*)&RespondedDevs, (void*)&(ReqMsg.TestData.Periph_B_F), sizeof(PeriphBitField_s)))  // All requested devices responded.
+          *(uint8_t*)&RespondedDevs |= (1 << RespMsg.DevType);                                                /* Marking the device as responded. */
+          *(uint8_t*)&DevResults    |= ((1 << RespMsg.DevType))*((uint8_t)RespMsg.Result);                    /* Marking the device's answer.     */
+          if(!memcmp((void*)&RespondedDevs, (void*)&(ReqMsg.TestData.Periph_B_F), sizeof(PeriphBitField_s)))  /* All requested devices responded. */
            break;
          }
        }
@@ -204,9 +214,6 @@ void ReqDevTest(DevTestInfo_s *DevTestInfo, PeriphType_e PeriphType)
 
 
 
-
-
-
 /*
  * *************************************************************************************************************
  **          UART Test Functions
@@ -229,17 +236,19 @@ bool TestUART(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
 	uint32_t MaxTimeToWait;
 	MaxTimeToWait = MAX(10, (TestPatLen * 1000) / MIN_UART_FREQUENCY);
 
+	xSemaphoreTake(UARTTestSem, 0);  /* Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt. */
+
     for(i = 0; i < NInt; i++)
      {
-      TestResult = !HAL_UART_Receive_DMA(&INSPECTED_UART, MedTestPattern, TestPatLen);  // Waiter
+      TestResult = !HAL_UART_Receive_DMA(&INSPECTED_UART, MedTestPattern, TestPatLen);  /* Waiter     */
       if(!TestResult) break;
-      TestResult = !HAL_UART_Transmit_DMA(&INSPECTOR_UART, TestPattern, TestPatLen);    // Activator
+      TestResult = !HAL_UART_Transmit_DMA(&INSPECTOR_UART, TestPattern, TestPatLen);    /* Activator  */
       if(!TestResult) break;
       TestResult = xSemaphoreTake(UARTTestSem, pdMS_TO_TICKS(MaxTimeToWait));
       if(!TestResult) break;
-      TestResult = !HAL_UART_Receive_DMA(&INSPECTOR_UART, RecvPat, TestPatLen);         // Waiter
+      TestResult = !HAL_UART_Receive_DMA(&INSPECTOR_UART, RecvPat, TestPatLen);         /* Waiter     */
       if(!TestResult) break;
-      TestResult = !HAL_UART_Transmit_DMA(&INSPECTED_UART, MedTestPattern, TestPatLen); // Activator
+      TestResult = !HAL_UART_Transmit_DMA(&INSPECTED_UART, MedTestPattern, TestPatLen); /* Activator  */
       if(!TestResult) break;
       TestResult = xSemaphoreTake(UARTTestSem, pdMS_TO_TICKS(MaxTimeToWait));
       if(!TestResult) break;
@@ -263,12 +272,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 }
 
-//void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
-// {
-//  UNUSED(huart);
-//  volatile int a = 2;
-//  UNUSED(a);
-// }
 
 
 
@@ -299,17 +302,17 @@ bool TestSPI(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
   for(i = 0; i < NInt; i++)
    {
     //xQueueReset((QueueHandle_t)SPITestSem);
-    xSemaphoreTake(SPITestSem, 0);  // Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt.
+    xSemaphoreTake(SPITestSem, 0);  /* Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt. */
 
-    TestResult = !HAL_SPI_TransmitReceive_DMA(&INSPECTED_SPI, EmptyTestPattern, MedTestPattern, TestPatLen);  // Receiving    // Waiter    (Slave)
+    TestResult = !HAL_SPI_TransmitReceive_DMA(&INSPECTED_SPI, EmptyTestPattern, MedTestPattern, TestPatLen);  /* Receiving    */ /*    Waiter    (Slave) */
     if(!TestResult) break;
-    TestResult = !HAL_SPI_TransmitReceive_DMA(&INSPECTOR_SPI, TestPattern, EmptyTestPattern, TestPatLen);    // Transmitting  // Activator (Master)
+    TestResult = !HAL_SPI_TransmitReceive_DMA(&INSPECTOR_SPI, TestPattern, EmptyTestPattern, TestPatLen);     /* Transmitting */ /*    Activator (Master) */
     if(!TestResult) break;
     TestResult = xSemaphoreTake(SPITestSem, pdMS_TO_TICKS(MaxTimeToWait));
     if(!TestResult) break;
-    TestResult = !HAL_SPI_TransmitReceive_DMA(&INSPECTED_SPI, MedTestPattern, EmptyTestPattern, TestPatLen); // Transmitting  // Waiter    (Slave)
+    TestResult = !HAL_SPI_TransmitReceive_DMA(&INSPECTED_SPI, MedTestPattern, EmptyTestPattern, TestPatLen);  /* Transmitting */ /*     Waiter    (Slave) */
     if(!TestResult) break;
-    TestResult = !HAL_SPI_TransmitReceive_DMA(&INSPECTOR_SPI, EmptyTestPattern, RecvPat, TestPatLen);        // Receiving     // Activator (Master)
+    TestResult = !HAL_SPI_TransmitReceive_DMA(&INSPECTOR_SPI, EmptyTestPattern, RecvPat, TestPatLen);         /* Receiving    */ /*     Activator (Master) */
     if(!TestResult) break;
     TestResult = xSemaphoreTake(SPITestSem, pdMS_TO_TICKS(MaxTimeToWait));
     if(!TestResult) break;
@@ -333,38 +336,6 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
  }
 
-//void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
-// {
-//  volatile uint32_t error;
-//  error = HAL_SPI_GetError(hspi);
-//  switch((uint32_t)hspi->Instance)
-//   {
-//    case (uint32_t)SPI1:
-//     break;
-//    case (uint32_t)SPI4:
-//     break;
-//   }
-//  switch(error)
-//   {
-//    case HAL_SPI_ERROR_NONE:              //(0x00000000U)   /*!< No error                               */
-//     break;
-//    case HAL_SPI_ERROR_MODF:              //(0x00000001U)   /*!< MODF error                             */
-//     break;
-//    case HAL_SPI_ERROR_CRC:               //(0x00000002U)   /*!< CRC error                              */
-//     break;
-//    case HAL_SPI_ERROR_OVR:               //(0x00000004U)   /*!< OVR error                              */
-//     break;
-//    case HAL_SPI_ERROR_FRE:               //(0x00000008U)   /*!< FRE error                              */
-//     break;
-//    case HAL_SPI_ERROR_DMA:               //(0x00000010U)   /*!< DMA transfer error                     */
-//     break;
-//    case HAL_SPI_ERROR_FLAG:              //(0x00000020U)   /*!< Error on RXNE/TXE/BSY/FTLVL/FRLVL Flag */
-//     break;
-//    case HAL_SPI_ERROR_ABORT:             //(0x00000040U)   /*!< Error during SPI Abort procedure       */
-//     break;
-//   }
-//  __HAL_SPI_CLEAR_OVRFLAG(hspi);
-// }
 
 
 /*
@@ -391,17 +362,19 @@ bool TestI2C(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
   uint32_t MaxTimeToWait;
   MaxTimeToWait = MAX(10, (TestPatLen * 1000) / MIN_I2C_FREQUENCY);
 
+  xSemaphoreTake(I2CTestSem, 0);  /* Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt. */
+
   for(i = 0; i < NInt; i++)
    {
-    TestResult = !HAL_I2C_Slave_Receive_DMA(&INSPECTED_I2C, MedTestPattern, TestPatLen);  // Waiter    (Slave)
+    TestResult = !HAL_I2C_Slave_Receive_DMA(&INSPECTED_I2C, MedTestPattern, TestPatLen);               /* Waiter    (Slave)  */
     if(!TestResult) break;
-    TestResult = !HAL_I2C_Master_Transmit_DMA(&INSPECTOR_I2C, SALVE_ADDR, TestPattern, TestPatLen);    // Activator (Master)
+    TestResult = !HAL_I2C_Master_Transmit_DMA(&INSPECTOR_I2C, SALVE_ADDR, TestPattern, TestPatLen);    /* Activator (Master) */
     if(!TestResult) break;
     TestResult = xSemaphoreTake(I2CTestSem, pdMS_TO_TICKS(MaxTimeToWait));
     if(!TestResult) break;
-    TestResult = !HAL_I2C_Slave_Transmit_DMA(&INSPECTED_I2C, MedTestPattern, TestPatLen); // Waiter    (Slave)
+    TestResult = !HAL_I2C_Slave_Transmit_DMA(&INSPECTED_I2C, MedTestPattern, TestPatLen);              /* Waiter    (Slave)  */
     if(!TestResult) break;
-    TestResult = !HAL_I2C_Master_Receive_DMA(&INSPECTOR_I2C, SALVE_ADDR, RecvPat, TestPatLen);         // Activator (Master)
+    TestResult = !HAL_I2C_Master_Receive_DMA(&INSPECTOR_I2C, SALVE_ADDR, RecvPat, TestPatLen);         /* Activator (Master) */
     if(!TestResult) break;
     TestResult = xSemaphoreTake(I2CTestSem, pdMS_TO_TICKS(MaxTimeToWait));
     if(!TestResult) break;
@@ -436,13 +409,6 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c)
   HAL_I2C_RxCpltCallback(hi2c);
  }
 
-//void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
-// {
-//  UNUSED(hi2c);
-//  volatile int a = 2;
-//  UNUSED(a);
-// }
-
 
 /*
  * *************************************************************************************************************
@@ -452,15 +418,14 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 
 
-#define REF_INT_VOLT       1180 // mV     1.18v ⩽ Vrefint ⩽ 1.24v
+#define REF_INT_VOLT       1180 /* mV     1.18v ⩽ Vrefint ⩽ 1.24v */
 #define MAX_ROUGH_VOLTAGE ((1<<12))
 
-#define VREFIN_CAL    (*(VREFINT_CAL_ADDR_CMSIS))
+#define VREFIN_CAL        (*(VREFINT_CAL_ADDR_CMSIS))
 
-//VREFINT_CAL_ADDR_CMSIS
 static SemaphoreHandle_t ADCTestSem;
 
-#define ADC_PERMITTED_ERROR 30  // mV
+#define ADC_PERMITTED_ERROR 30  /* mV */
 
 bool TestADC(uint8_t NInt, int32_t TestVoltage)
  {
@@ -474,8 +439,7 @@ bool TestADC(uint8_t NInt, int32_t TestVoltage)
   ADC_ChannelConfTypeDef TerstedChannel = {.Channel = ADC_CHANNEL_0,       .Offset = 0, .Rank = ADC_REGULAR_RANK_1, .SamplingTime = ADC_SAMPLETIME_15CYCLES};
   MaxTimeToWait = 10;  // Must be rechecked.
 
-  //RoughVoltageDAC = TestVoltage*0x1000/3243+29;  //  TestVoltage*0x1000/3200
-  xSemaphoreTake(ADCTestSem, 0);  // Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt.
+  xSemaphoreTake(ADCTestSem, 0);  /* Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt. */
 
 
   TestResult = !HAL_ADC_ConfigChannel(&INSPECTED_ADC, &VrefintChannel);
@@ -524,36 +488,32 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 
 
 
-void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdacp)
+void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac)
  {
   static BaseType_t xHigherPriorityTaskWoken;
+  DAC_HandleTypeDef *inspector_dac_p;
+  {
+   /*
+    * Attention !
+    * Because with the name "hdac" is defined the global variable in dac.c ("DAC_HandleTypeDef hdac;") to which
+    * is referred the "INSPECTOR_DAC" definition and the local variable given as the parameter in this function
+    * ( "(DAC_HandleTypeDef *hdac)" ) in this functions is used special pointer to the global variable
+    * "DAC_HandleTypeDef *inspector_dac_p;" to enable using the global variable shadowed by the local.
+    * None of these variables neither local nor global cannot be simply renamed because the "dac.c" library
+    * and the header of these function "void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac);" are
+    * originally defined by the HAL Cube MX and their names shouldn't be changed otherwise it would cause
+    * the problem after regenerating this project by the CobeMX or by user for consistent definition.
+    */
+   extern DAC_HandleTypeDef INSPECTOR_DAC;
+   inspector_dac_p = &INSPECTOR_DAC;
+  }
   xHigherPriorityTaskWoken = pdFALSE;
-  DAC_HandleTypeDef *p1, *p2;
-  p1 = hdacp;
-  p2 = (&INSPECTOR_DAC);
-  if(hdacp == &INSPECTOR_DAC)
+  if(hdac == inspector_dac_p)
    {
     xSemaphoreGiveFromISR(ADCTestSem, &xHigherPriorityTaskWoken);
    }
  }
 
-
-uint32_t DAC_VoltsToRoghData(uint32_t Volts, VoltsConvMethod_e ConvMethod)
- {
-  switch(ConvMethod)
-   {
-    case E_IDEAL_CONV:
-     break;
-    case E_LINEAR_CONV:
-     break;
-    case E_POLYNOM_CONV:
-     break;
-   }
- }
-uint32_t ADC_RoghDataToVolts(uint32_t RoghData, VoltsConvMethod_e ConvMethod)
- {
-
- }
 
 /*
  * *************************************************************************************************************
@@ -570,22 +530,23 @@ static int32_t MeasuredTime = 0;
 static uint16_t cnt;
 static uint16_t NPerPairs = 2;
 
+
 bool TestTimer(uint8_t NInt, uint32_t TestTime)
  {
   bool TestResult;
   uint8_t i;
   uint32_t MaxTimeToWait;
-  if(TestTime<=4)
+  if(TestTime <= 4)
    return false;
   MaxTimeToWait = MAX(10, DIV_RND_UP(TestTime*4, 1000));  // Must be rechecked.
   NPerPairs = 2*MAX(1, 1000/TestTime);
-  xSemaphoreTake(TIMTestSem, 0);  // Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt.
+  xSemaphoreTake(TIMTestSem, 0);  /* Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt. */
 
-  HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
-  TestResult = !SetPeriod(&htim1,TIM_CHANNEL_1, TestTime);
+  HAL_TIM_PWM_Start(&INSPECTOR_TIM,INSPECTOR_TIM_CHANNEL);
+  SetPeriod(&INSPECTOR_TIM,INSPECTOR_TIM_CHANNEL, TestTime);
 
   cnt = 0;
-  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_2);
+  HAL_TIM_IC_Start_IT(&INSPECTED_TIM, INSPECTED_TIM_CHANNEL);
 
   for(i = 0; i < NInt; i++)
    {
@@ -596,8 +557,8 @@ bool TestTimer(uint8_t NInt, uint32_t TestTime)
     if(!TestResult) break;
    }
 
-  HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_2);
-  //HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+  HAL_TIM_IC_Stop_IT(&INSPECTED_TIM, INSPECTED_TIM_CHANNEL);
+  HAL_TIM_PWM_Stop(&INSPECTOR_TIM,INSPECTOR_TIM_CHANNEL);
 
   return TestResult;
  }
@@ -613,14 +574,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
   static BaseType_t xHigherPriorityTaskWoken;
   xHigherPriorityTaskWoken = pdFALSE;
 
-  if(htim == &htim2)
+  if(htim == &INSPECTED_TIM)
    {
-    if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
+    if(htim->Channel == INSPECTED_TIM_ACTIVE_CHANNEL)
      {
-      //v = htim->Instance->CCR2;
-      //v = htim->Instance->CNT;
-      //v = __HAL_TIM_GET_COUNTER(htim);
-      v[state] =  HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+      v[state] =  HAL_TIM_ReadCapturedValue(htim, INSPECTED_TIM_CHANNEL);
       state = !state;
       MeasuredTime = abs(v[1]-v[0]);
       cnt++;
@@ -629,8 +587,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
         xSemaphoreGiveFromISR(TIMTestSem, &xHigherPriorityTaskWoken);
         cnt = 0;
        }
-
-      //__HAL_TIM_SET_COUNTER(htim, 0);
      }
    }
  }
@@ -646,7 +602,17 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 #define ValuesColor TermMagenta
 #define UnitsColor  TermCyan
 
-void DevTestTask(void *pvParameters)//void DevTestTask(DevTaskParams_s const * const pvParameters)
+/*
+ * void DevTestTask(void *pvParameters)
+ * The task-procedure for testing peripherals..
+ * It is implemented in several (5) separate tasks when each one of them tests one of the next peripherals:
+ * UART, SPI, I2C, ADC or Timer. This procedure contains the common algorithm for all the task tester while
+ * the specific task parts of algorithm exist in separate functions selected in the switch cases.
+ * Because this procedure is running in several (5) copies - to use the static variables for specific task
+ * is not possible. Instead of it any required task-specific data can be given via the parameter "void *pvParameters".
+ */
+
+void DevTestTask(void *pvParameters)
  {
 #ifdef DEBUG
   char const * const OwnTaskName = pcTaskGetName(NULL); // Is defined to make debugging easier.
@@ -655,13 +621,12 @@ void DevTestTask(void *pvParameters)//void DevTestTask(DevTaskParams_s const * c
   DevTaskParams_s *DevTaskParams = pvParameters;
   DevTestMesg_s Message;
   bool Result = false;
-//  char buf[MAX_TEST_PATTERN_SIZE*2+50];
-//  char *bpnt;
   int i;
   for(;;)
    {
     if(pdPASS == xQueueReceive(DevTaskParams->DevTestQue, &Message, portMAX_DELAY))
      {
+#ifdef DEBUG
       rtprintf("\n\r%sStarting %s Test...%s\n\r", TermBlue, PeriphNames[DevTaskParams->PeriphType], TermColorsReset);
       switch(DevTaskParams->PeriphType)
        {
@@ -682,7 +647,7 @@ void DevTestTask(void *pvParameters)//void DevTestTask(DevTaskParams_s const * c
         default:
          break;
        }
-
+#endif
       switch(DevTaskParams->PeriphType)
        {
         case E_UART:

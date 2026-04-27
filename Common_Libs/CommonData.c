@@ -4,7 +4,7 @@
 
 
 
-#define POLYNOM  0x04C11DB7  
+#define POLYNOM   0x04C11DB7
 #define CRC_SHIFT 0
 #define MSB_MASK  0xAB25CD87
 

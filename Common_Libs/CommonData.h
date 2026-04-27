@@ -39,14 +39,12 @@
 /*
  * Min / Max macros
  */
-
 #define MAX(X, Y) ( (X) > (Y) ? (X) : (Y) )           /* The macro returning the biggest from the two values.  */
 #define MIN(X, Y) ( (X) < (Y) ? (X) : (Y) )           /* The macro returning the smallest from the two values. */
 
 /*
  * Div macros
  */
-
 #define DIV_RND(X,Y)    ( ((X) + (Y) / 2) / (Y) )     /* Deviation with rounding.      10/6 will give 2 and 10/3 will give 3  */
 #define DIV_RND_UP(X,Y) ( ((X) + (Y) - 1) / (Y) )     /* Deviation with rounding up.   10/6 will give 2 and 10/3 will give 4  */
 #define DIV_RND_DN(X,Y) ( (X) / (Y)             )     /* Deviation with rounding down. 10/6 will give 1 and 10/3 will give 3 Regular deviation equal to regular "/". Is defined for compliation the previous macros deviations */
@@ -71,9 +69,9 @@
  * Internet information for sending and receiving call-events.
  */
 #define HOST_NAME              "CardTester"
-#define DESTIN_IP              "192.168.1.113"         /* Server IP address to which are sent the call messages. */
-#define DESTIN_PORT             8080                   /* Server port to which are sent the call messages. */
-#define BUFFER_SIZE             1024                   /* The length in bytes, of the buffer pointed by the buf paramter that is used by the recvfrom() function. */
+#define DESTIN_IP              "192.168.1.113"            /* Server IP address to which are sent the call messages. */
+#define DESTIN_PORT             8080                      /* Server port to which are sent the call messages. */
+#define BUFFER_SIZE             1024                      /* The length in bytes, of the buffer pointed by the buf paramter that is used by the recvfrom() function. */
 
 #define CRC_SIZE               ( sizeof(uint32_t) )
 #define MAX_SEND_MSG_SIZE      ( sizeof(TestData_s) + MAX_TEST_PATTERN_SIZE + CRC_SIZE )
@@ -100,14 +98,6 @@ typedef enum __attribute__((__packed__)) TestResType_e  // The attribute "__attr
  }TestResType_e;
 
 
-typedef enum VoltsConvMethod_e  // Conversion method between voltage and rough data.
- {
-  E_IDEAL_CONV,    // Method of ideal conversion when the ADC or DAC are work ideally and the data can be converted by the theoretical formula.
-  E_LINEAR_CONV,   // Conversion by using the linear equation y=ax+b when the coefficients a and b are found by linear regression or any other method for getting an approximate linear equation.
-  E_POLYNOM_CONV   // Conversion by the tailor polynomial approximation y= ∑aₙ𐄁xⁿ = a₀+ a₁x+a₂x²+a₃x³+a₄x⁴+a₅x⁵+a₆x⁶+a₇x⁷+a₈x⁸+a₉x⁹+...  .
- }VoltsConvMethod_e;
-
-
 typedef struct PeriphBitField_s
  {
   uint8_t Timer_bf     : 1;
@@ -118,7 +108,7 @@ typedef struct PeriphBitField_s
   uint8_t Reserved  : 3;
  }PeriphBitField_s;
 
- typedef struct __attribute__((packed)) TestData_s // The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending.
+ typedef struct __attribute__((packed)) TestData_s /* The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending. */
  {
   uint32_t Test_ID;
   uint32_t TestTime;
@@ -129,16 +119,13 @@ typedef struct PeriphBitField_s
  }TestData_s;
 
 
-typedef struct __attribute__((packed)) TestResult_s // The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending.
+typedef struct __attribute__((packed)) TestResult_s /* The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending. */
  {
   uint32_t Test_ID;
   PeriphBitField_s Periph_B_F;
   PeriphBitField_s Results_B_F;
   TestResType_e TestResult;
  }TestResult_s;
-
-
-
 
 #define Timer_Flag (1 << E_TIMER)
 #define UART_Flag  (1 << E_UART)

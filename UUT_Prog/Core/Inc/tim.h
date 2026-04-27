@@ -49,7 +49,7 @@ void MX_TIM6_Init(void);
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN Prototypes */
-HAL_StatusTypeDef SetPeriod(TIM_HandleTypeDef *htim, uint32_t Channel, uint32_t PeriodToSet);
+void SetPeriod(TIM_HandleTypeDef *htim, uint32_t Channel, uint32_t PeriodToSet);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

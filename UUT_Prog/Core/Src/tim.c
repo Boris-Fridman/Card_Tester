@@ -336,12 +336,8 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 }
 
 /* USER CODE BEGIN 1 */
-HAL_StatusTypeDef SetPeriod(TIM_HandleTypeDef *htim, uint32_t Channel, uint32_t PeriodToSet)
+void SetPeriod(TIM_HandleTypeDef *htim, uint32_t Channel, uint32_t PeriodToSet)
  {
-  HAL_StatusTypeDef TestResult;
-  //TestResult = HAL_TIM_PWM_ConfigChannel(htim, &Config, Channel);
-  //htim->Instance->CCR1 = Pulse;
-  //TIM_Base_SetConfig(htim->Instance, &htim->Init);
   htim->Instance->ARR = (uint32_t)PeriodToSet-1;
   uint32_t HalfPeriod = DIV_RND(PeriodToSet, 2);
   switch(Channel)
@@ -365,8 +361,6 @@ HAL_StatusTypeDef SetPeriod(TIM_HandleTypeDef *htim, uint32_t Channel, uint32_t 
       htim->Instance->CCR6 = HalfPeriod;
      break;
    }
-
-  return TestResult;
  }
 /* USER CODE END 1 */
 
