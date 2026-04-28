@@ -9,8 +9,8 @@
 
 
 
-static int TestID;                     // Defined temperary for test. Will be removed.
-static PeriphBitField_s Periph_B_F;    // Defined temperary for test. Will be removed.
+// static int TestID;                     // Defined temperary for test. Will be removed.
+// static PeriphBitField_s Periph_B_F;    // Defined temperary for test. Will be removed.
 
 
 
@@ -20,19 +20,25 @@ static int sockfd;
 
 int InitNetwork()
  {
+  bool NoPiping;
+  NoPiping = isatty(STDERR_FILENO);
 
   host = gethostbyname(HOST_NAME);
   if(host == NULL)
    {
-    fprintf(stderr, "%sCannot detect host address from the name.%s\n\r", TermRed, TermColorsReset);
+    if(NoPiping)fprintf(stderr, TermRed);
+    //fprintf(stderr, "Cannot detect host address from the name.\n\r");
+    perror("Cannot detect host address from the name.");
+    if(NoPiping)fprintf(stderr, TermColorsReset);
     return -1;
    }
 
   // Create a UDP socket
   if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
    {
-    //fprintf(stderr, "%sSocket creation failed.%s\n\r", TermRed, TermColorsReset);
+    if(NoPiping)fprintf(stderr, "%s", TermRed);
     perror("Socket creation failed");
+    if(NoPiping)fprintf(stderr, "%s", TermColorsReset);
     return -1;
    }
 
@@ -51,12 +57,15 @@ void CloseNetwork()
 
 int SendCommandToNetwork(TestData_s *TestData, uint8_t TestPattern[])
  {
-  TestID = TestData->Test_ID;          // Defined for test only. Will be removed.
-  Periph_B_F = TestData->Periph_B_F;   // Defined for test only. Will be removed.
+  // TestID = TestData->Test_ID;          // Defined for test only. Will be removed.
+  // Periph_B_F = TestData->Periph_B_F;   // Defined for test only. Will be removed.
 
   uint8_t *Pack;
   size_t PackSizeNetto, PackSizeFull;
   ssize_t result;
+  bool StdErrNoPiping, StdOutNoPiping;
+  StdErrNoPiping = isatty(STDERR_FILENO);
+  StdOutNoPiping = isatty(STDOUT_FILENO);
 
   PackSizeNetto = sizeof(TestData_s) + TestData->Bit_Pattern_Length;
   PackSizeFull = PackSizeNetto + CRC_SIZE;
@@ -70,14 +79,24 @@ int SendCommandToNetwork(TestData_s *TestData, uint8_t TestPattern[])
 
     result = sendto(sockfd, Pack, PackSizeFull, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
     if(result >= 0 )
-     printf("%sThe message was sent successfully.  %ld bytes were sent.%s\n\r", TermGreen, result, TermColorsReset);
+     {
+      if(StdOutNoPiping)fprintf(stdout, "%s", TermGreen);
+      printf("The message was sent successfully.  %ld bytes were sent.\n\r", result);
+      if(StdOutNoPiping)fprintf(stdout, "%s", TermColorsReset);
+     }
     else
-     printf("%sError in sending.%s\n\r", TermRed, TermColorsReset);
+     {
+      if(StdOutNoPiping)fprintf(stdout, "%s", TermRed);
+      printf("Error in sending.\n\r");
+      if(StdOutNoPiping)fprintf(stdout, "%s", TermColorsReset);
+     }
     free(Pack);
    }
   else
    {
-    fprintf(stderr, "%sCannot allocate the memory.%s\n\r", TermRed, TermColorsReset);
+    if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
+    fprintf(stderr, "Cannot allocate the memory.\n\r");
+    if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
    }
 
   return 0;
@@ -85,24 +104,32 @@ int SendCommandToNetwork(TestData_s *TestData, uint8_t TestPattern[])
 
 int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
  {
-  int r;                                                               // Defined for test only. Will be removed.
-  ResultData->Periph_B_F = Periph_B_F;                                 // Defined for test only. Will be removed.
-  ResultData->Test_ID = TestID;                                        // Defined for test only. Will be removed.
-  r = rand();                                                          // Defined for test only. Will be removed.
-  ResultData->TestResult = (r % 2) ? E_TEST_SUCCEEDED : E_TEST_FAILED; // Defined for test only. Will be removed.
+  // int r;                                                               // Defined for test only. Will be removed.
+  // ResultData->Periph_B_F = Periph_B_F;                                 // Defined for test only. Will be removed.
+  // ResultData->Test_ID = TestID;                                        // Defined for test only. Will be removed.
+  // r = rand();                                                          // Defined for test only. Will be removed.
+  // ResultData->TestResult = (r % 2) ? E_TEST_SUCCEEDED : E_TEST_FAILED; // Defined for test only. Will be removed.
 
 
   struct timeval tv;
   uint8_t buffer[BUFFER_SIZE];
   static struct sockaddr_in client_addr;
-  socklen_t addr_len = sizeof(client_addr);
+  socklen_t addr_len;
+
+  bool StdErrNoPiping, StdOutNoPiping;
+  StdErrNoPiping = isatty(STDERR_FILENO);
+  StdOutNoPiping = isatty(STDOUT_FILENO);
   
+  addr_len = sizeof(client_addr);
+
   tv.tv_sec  = TimeOut / 1000;
   tv.tv_usec = (TimeOut % 1000) * 1000;
 
   if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) 
    {
+    if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
     perror("Error setting timeout");
+    if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
    }
 
 
@@ -111,17 +138,19 @@ int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
    {
     if(CRC_Correct(buffer, len))
      {
-      printf("%sThe message was received successfully.  %ld bytes were received.%s\n\r", TermGreen, len, TermColorsReset);
+      if(StdOutNoPiping)fprintf(stdout, "%s", TermGreen);
+      printf("The message was received successfully.  %ld bytes were received.\n\r", len);
+      if(StdOutNoPiping)fprintf(stdout, "%s", TermColorsReset);
       memcpy(ResultData, buffer, sizeof(TestResult_s));
       return 0;
      }
    }
   else
    {
-    fprintf(stderr, "%s", TermRed);
+    if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
     //printf("%sNo Response.%s\n\r", TermRed, TermColorsReset);
     perror("Problem in receiving data");
-    fprintf(stderr, "%s", TermColorsReset);
+    if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
     return -1;
    }
 

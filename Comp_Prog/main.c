@@ -5,6 +5,7 @@
 #include <sqlite3.h>
 #include <libgen.h>
 #include <time.h>
+#include <unistd.h>
 #include "CommonData.h"
 #include "DataBase.h"
 #include "Network.h"
@@ -17,7 +18,7 @@
 
 void PrinthelpMessage(char *ProgName);
 int CheckArgs(int argc, char *argv[], int *NInt, PeriphBitField_s *BFResult);
-void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, int NInt, int TestID);
+void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, uint32_t NInt, uint32_t TestID);
 void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPattern[]);
 void PrintTestResults(TestResult_s const * const TestInfo);
 void ConvertTime(time_t const * const TimeToConvert, char TimeAsStr[], size_t TimeStrSize);
@@ -159,7 +160,7 @@ void PrinthelpMessage(char *ProgName)
  }
 
 
-void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, int NInt, int TestID)
+void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, uint32_t NInt, uint32_t TestID)
  {
   uint32_t MinFreq, MaxAddDelay = 0;
 
@@ -170,9 +171,9 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
     if(PeriphBF.I2C_bf)   MinFreq = MIN(MinFreq, MIN_I2C_FREQUENCY);
     if(PeriphBF.SPI_bf)   MinFreq = MIN(MinFreq, MIN_SPI_FREQUENCY);
     if(PeriphBF.UART_bf)  MinFreq = MIN(MinFreq, MIN_UART_FREQUENCY);
-    MaxAddDelay += 1000 * TestData->Bit_Pattern_Length * 8 / MinFreq;
-    TestData->Bit_Pattern_Length = MAX(1, rand() % MAX_TEST_PATTERN_SIZE);  // Determining Test Pattern Length randomly starting from 1, but less than Maximum permitted length.
-    for(uint8_t i = 0; i< TestData->Bit_Pattern_Length; i++)
+    MaxAddDelay += DIV_RND_UP(1000 * TestData->Bit_Pattern_Length * 8 , MinFreq);
+    TestData->Bit_Pattern_Length = MAX(1, rand() % MAX_TEST_PATTERN_SIZE);  /* Determining Test Pattern Length randomly starting from 1, but less than Maximum permitted length. */
+    for(uint8_t i = 0; i < TestData->Bit_Pattern_Length; i++)
      {
       TestPattern[i] = rand() % 256;
      }
@@ -184,8 +185,8 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
    
   if(PeriphBF.Timer_bf)
    {
-    TestData->TestTime = MAX(10, rand() % (60001));    // In ms
-    MaxAddDelay += TestData->TestTime;
+    TestData->TestTime = MAX(10, rand() % (60001));    /* In µs */
+    MaxAddDelay = MAX(MaxAddDelay, DIV_RND_UP(TestData->TestTime * 2 * NInt, 1000));
    }
   else
    {
@@ -193,7 +194,8 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
    }
   if(PeriphBF.ADC_bf)
    {
-    TestData->TestVoltage = rand() % (3200); // In mV
+    TestData->TestVoltage = rand() % (3200); /* In mV */
+    MaxAddDelay = MAX(MaxAddDelay, DIV_RND_UP(MAX_ADC_CHECK_TIME * NInt, 1000));
    }
   else
    {
@@ -211,13 +213,15 @@ void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPatt
  {
   uint8_t i;
   uint8_t Devs;
+  bool NoPiping;
+  NoPiping = isatty(STDOUT_FILENO);
 
   printf("\n\r");
   printf("Running the test...\n\r");
   printf("Test ID: %d\n\r", TestData->Test_ID);
   Devs = *(uint8_t *)&TestData->Periph_B_F;
   printf("The devices will be tested:\n\r");
-  printf(DevsColor);
+  if(NoPiping)printf(DevsColor);
   for(i = 0; i < E_NUM_PERIPHS; i++)
    {
     if(Devs & (1<<i))
@@ -225,56 +229,105 @@ void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPatt
       printf("%s\n\r", PeriphNames[i]);
      }
    }
-  printf(TermColorsReset);
+  if(NoPiping)printf(TermColorsReset);
   if(Devs & (UART_Flag | SPI_Flag | I2C_Flag ))
    {
-    printf("Peripheral chekcing pattern: %s0x", ValuesColor);
+    printf("Peripheral chekcing pattern: ");
+    if(NoPiping)printf(ValuesColor);
+    printf("0x");
     for(i = 0; i < TestData->Bit_Pattern_Length; i++)
      {
       printf("%02X",TestPattern[i]);
      }
-    printf("%s\n\r",TermColorsReset);
+    if(NoPiping)printf(TermColorsReset);
+    printf("\n\r");
    }
   
   if(Devs & Timer_Flag)
    {
-    printf("Timer checking time: %s%d%sms%s\n\r", ValuesColor, TestData->TestTime, UnitsColor, TermColorsReset);
+    printf("Timer checking time: ");
+    if(NoPiping)printf(ValuesColor);
+    printf("%d",TestData->TestTime);
+    if(NoPiping)printf(UnitsColor);
+    printf("µs");
+    if(NoPiping)printf(TermColorsReset);
+    printf("\n\r");
+    //printf("Timer checking time: %s%d%sµs%s\n\r", ValuesColor, TestData->TestTime, UnitsColor, TermColorsReset);
    }
   
   if(Devs & ADC_Flag)
    {
-    printf("ADC checking voltage: %s%d%smV%s\n\r", ValuesColor, TestData->TestVoltage, UnitsColor, TermColorsReset);
+    printf("ADC checking voltage: ");
+    if(NoPiping)printf(ValuesColor);
+    printf("%d", TestData->TestVoltage);
+    if(NoPiping)printf(UnitsColor);
+    printf("mV");
+    if(NoPiping)printf(TermColorsReset);
+    printf("\n\r");
+    //printf("ADC checking voltage: %s%d%smV%s\n\r", ValuesColor, TestData->TestVoltage, UnitsColor, TermColorsReset);
    }
 
-  printf("The number interrations is: %s%d%s\n\r", ValuesColor, TestData->Num_Interations, TermColorsReset);
+
+  printf("The number interrations is: ");
+  if(NoPiping)printf(ValuesColor);
+  printf("%d", TestData->Num_Interations);
+  if(NoPiping)printf(TermColorsReset);
+  printf("\n\r");
+
+  //printf("The number interrations is: %s%d%s\n\r", ValuesColor, TestData->Num_Interations, TermColorsReset);
 
   printf("\n\r");
  }
 
 void PrintTestResults(TestResult_s const * const TestInfo)
  {
-  uint8_t i;
+  uint8_t i, j;
   uint8_t Devs, Results;
   bool TRes;
+  uint8_t MaxNameLen;
+  bool NoPiping;
+  NoPiping = isatty(STDOUT_FILENO);
+
   printf("The test Results:\n\r");
   printf("Test ID: %d\n\r", TestInfo->Test_ID);
 
   Devs = *(uint8_t *)&TestInfo->Periph_B_F;
   Results = *(uint8_t *)&TestInfo->Results_B_F;
+  
+  
+  for(i = 0, MaxNameLen = 0; i < E_NUM_PERIPHS; i++)
+   {
+    MaxNameLen = MAX(MaxNameLen, strlen(PeriphNames[i]));
+   }
 
-  printf("The devices will be tested:\n\r");
+  printf("The tested devices:\n\r");
   for(i = 0; i < E_NUM_PERIPHS; i++)
    {
     if(Devs & (1<<i))
      {
-      printf("%s%s:    %s", DevsColor, PeriphNames[i], TermColorsReset);
+      if(NoPiping)printf(DevsColor);
+      printf("%s:    ", PeriphNames[i]);
+      if(NoPiping)printf(TermColorsReset);
+      //printf("%s%s:    %s", DevsColor, PeriphNames[i], TermColorsReset);
+      for(j = 0; j < (MaxNameLen - strlen(PeriphNames[i])); j++)
+       {
+        printf(" ");
+       }
       TRes = Results  & (1<<i);
-      printf("%s%s%s\n\r", ResultColors[TRes], ResultMessages[TRes], TermColorsReset);
+      if(NoPiping)printf("%s", ResultColors[TRes]);
+      printf("%s\n\r", ResultMessages[TRes]);
+      if(NoPiping)printf(TermColorsReset);
+      //printf("%s%s%s\n\r", ResultColors[TRes], ResultMessages[TRes], TermColorsReset);
      }
    }
-  printf(TermColorsReset);
   TRes = TestInfo->TestResult == E_TEST_SUCCEEDED;
-  printf("The final Result: %s%s%s\n\r", ResultColors[TRes], ResultMessages[TRes], TermColorsReset);  
+  
+  printf("The final Result: ");  
+  if(NoPiping)printf("%s", ResultColors[TRes]);
+  printf("%s", ResultMessages[TRes]);  
+  if(NoPiping)printf(TermColorsReset);
+  printf("\n\r");  
+  //printf("The final Result: %s%s%s\n\r", ResultColors[TRes], ResultMessages[TRes], TermColorsReset);  
  }
 
 void ConvertTime(time_t const * const TimeToConvert, char TimeAsStr[], size_t TimeStrSize)

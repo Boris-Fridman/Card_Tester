@@ -29,7 +29,7 @@
 #include "FreeRTOSConfig.h"
 #include "projdefs.h"
 
-
+/*======================================================================================================================*/
 
 #define xTESTER_PRIORITY       0                                          /* Priority of the tester tasks. */
 #define xTESTER_STACK_SIZE     MAX(configMINIMAL_STACK_SIZE, 1024)        /* Stack size of the main-test-task. */
@@ -66,6 +66,7 @@
 #define INSPECTED_TIM_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_2
 
 
+/*======================================================================================================================*/
 
 typedef struct TestReqMesg_s
  {
@@ -100,6 +101,7 @@ typedef struct DevTaskParams_s
   PeriphType_e PeriphType;
  }DevTaskParams_s;
 
+ /*======================================================================================================================*/
 
 TaskHandle_t xTesterTaskHandle;                   /* Handle to Tester      task. */
 
@@ -109,14 +111,16 @@ QueueHandle_t TestReqQueue;
 QueueHandle_t TestRespQueue;
 static SemaphoreHandle_t RespQueueMut;
 
-
+/*======================================================================================================================*/
 
 void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F);
 
 void ReqDevTest(DevTestInfo_s *DevTestInfo, PeriphType_e PeriphType);
 
 
-
+/*======================================================================================================================*/
+/*    Sends request for test                                                                                            */
+/*    Test Manager <---- Network                                                                                        */
 void ReqForTest(TestData_s TestData, uint8_t TestPattern[])
  {
   TestReqMesg_s Message;
@@ -125,7 +129,8 @@ void ReqForTest(TestData_s TestData, uint8_t TestPattern[])
   xQueueSend(TestReqQueue, &Message, pdMS_TO_TICKS(10));
  }
 
-
+/*======================================================================================================================*/
+/* Sends Test Response from peripheral-testing-task to the test manager                                                 */
 void SendTestResponse(bool Result, PeriphType_e PeriphType)
  {
   TestRespMesg_s Message;
@@ -137,7 +142,8 @@ void SendTestResponse(bool Result, PeriphType_e PeriphType)
  }
 
 
-
+/*======================================================================================================================*/
+/*    Test Manager Task                                                                                                 */
 void TesterTask(void *pvParameters)
  {
   TestReqMesg_s ReqMsg;
@@ -189,6 +195,7 @@ void TesterTask(void *pvParameters)
  }
 
 
+/*======================================================================================================================*/
 
 void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F)
  {
@@ -201,6 +208,8 @@ void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F)
    }
  }
 
+/*======================================================================================================================*/
+
 DevTaskParams_s DevTaskParams[E_NUM_PERIPHS] = {0};
 
 void ReqDevTest(DevTestInfo_s *DevTestInfo, PeriphType_e PeriphType)
@@ -212,13 +221,12 @@ void ReqDevTest(DevTestInfo_s *DevTestInfo, PeriphType_e PeriphType)
 
 
 
-
-
+/*======================================================================================================================*/
 /*
  * *************************************************************************************************************
  **          UART Test Functions
  * *************************************************************************************************************
-*/
+ */
 static SemaphoreHandle_t UARTTestSem;
 
 

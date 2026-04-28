@@ -91952,9 +91952,9 @@ void sys_arch_unprotect(sys_prot_t pval)
  8021eb4:	2001106c 	.word	0x2001106c
 
 08021eb8 <NetworkInit>:
-void DecodeData(uint8_t Data[], size_t Len,  TestData_s *TestData, uint8_t **TestPattern);
-void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, TestResult_s TestResult);
 
+
+/*======================================================================================================================*/
 
 void NetworkInit()
  {
@@ -92718,10 +92718,10 @@ return len;
  802236c:	0802af04 	.word	0x0802af04
 
 08022370 <ReqForTest>:
-void ReqDevTest(DevTestInfo_s *DevTestInfo, PeriphType_e PeriphType);
 
-
-
+/*======================================================================================================================*/
+/*    Sends request for test                                                                                            */
+/*    Test Manager <---- Network                                                                                        */
 void ReqForTest(TestData_s TestData, uint8_t TestPattern[])
  {
  8022370:	b590      	push	{r4, r7, lr}
@@ -92764,7 +92764,8 @@ void ReqForTest(TestData_s TestData, uint8_t TestPattern[])
 
 080223c0 <SendTestResponse>:
 
-
+/*======================================================================================================================*/
+/* Sends Test Response from peripheral-testing-task to the test manager                                                 */
 void SendTestResponse(bool Result, PeriphType_e PeriphType)
  {
  80223c0:	b580      	push	{r7, lr}
@@ -92813,7 +92814,8 @@ void SendTestResponse(bool Result, PeriphType_e PeriphType)
 08022414 <TesterTask>:
 
 
-
+/*======================================================================================================================*/
+/*    Test Manager Task                                                                                                 */
 void TesterTask(void *pvParameters)
  {
  8022414:	b580      	push	{r7, lr}
@@ -92989,9 +92991,9 @@ void TesterTask(void *pvParameters)
  8022554:	20011098 	.word	0x20011098
 
 08022558 <MakeTest>:
- }
 
 
+/*======================================================================================================================*/
 
 void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F)
  {
@@ -93039,6 +93041,7 @@ void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F)
 	...
 
 080225a0 <ReqDevTest>:
+/*======================================================================================================================*/
 
 DevTaskParams_s DevTaskParams[E_NUM_PERIPHS] = {0};
 

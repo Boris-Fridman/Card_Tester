@@ -68,7 +68,7 @@
 /*
  * Internet information for sending and receiving call-events.
  */
-#define HOST_NAME              "CardTester"
+#define HOST_NAME              "CardTester"               /* Server Host Name with which the it is regognized in DHCP Connection */
 #define DESTIN_IP              "192.168.1.113"            /* Server IP address to which are sent the call messages. */
 #define DESTIN_PORT             8080                      /* Server port to which are sent the call messages. */
 #define BUFFER_SIZE             1024                      /* The length in bytes, of the buffer pointed by the buf paramter that is used by the recvfrom() function. */
@@ -105,7 +105,7 @@ typedef struct PeriphBitField_s
   uint8_t SPI_bf       : 1;
   uint8_t I2C_bf       : 1;
   uint8_t ADC_bf       : 1;
-  uint8_t Reserved  : 3;
+  uint8_t Reserved     : 3;
  }PeriphBitField_s;
 
  typedef struct __attribute__((packed)) TestData_s /* The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending. */

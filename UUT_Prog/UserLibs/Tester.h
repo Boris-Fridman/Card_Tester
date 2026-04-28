@@ -16,7 +16,7 @@
 
 
 /**
- * @brief Sends requrest for test
+ * @brief Sends request for test
  *
  * @code{c}
  * void ReqForTest(TestData_s TestData, uint8_t TestPattern[]);

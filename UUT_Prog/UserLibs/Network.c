@@ -21,21 +21,29 @@
 
 #include "SystemLib.h"
 
+
+/*======================================================================================================================*/
+
 #define xNETWORK_PRIORITY 0
 #define xNETWORK_STACK_SIZE MAX(configMINIMAL_STACK_SIZE, 512)
 
 #define TEST_REPORT_QUEUE_LEN 5        /*  Length of the test report queue. */
 
+/*======================================================================================================================*/
+
 QueueHandle_t TestReportQueue;
 
 TaskHandle_t xNewtworkTaskHandle;      /*  Handle to network task.          */
 
+/*======================================================================================================================*/
 
 void NetworkTask(void *pvParameters);
 void Wait_for_DHCP(void);
 void DecodeData(uint8_t Data[], size_t Len,  TestData_s *TestData, uint8_t **TestPattern);
 void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, TestResult_s TestResult);
 
+
+/*======================================================================================================================*/
 
 void NetworkInit()
  {
