@@ -10,35 +10,37 @@
 #include "DataBase.h"
 #include "Network.h"
     
+/*======================================================================================================================*/
 
 #define DevsColor   TermBlue //TermYello
 #define ValuesColor TermMagenta 
 #define UnitsColor  TermCyan
 
+#define ARG_ERROR_RESULT -1
+#define ARG_TEST_RESULT   0
+#define ARG_HELP_RESULT   1
+#define ARG_RESET_RESULT  2
+
+/*======================================================================================================================*/
 
 void PrinthelpMessage(char *ProgName);
+void PrintErrorMessage(int argc, char *argv[]);
 int CheckArgs(int argc, char *argv[], int *NInt, PeriphBitField_s *BFResult);
+void ReqDevForMakingReset(void);
+void ReqDevForMakingTest(int NInt, PeriphBitField_s PeriphBF);
 void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, uint32_t NInt, uint32_t TestID);
 void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPattern[]);
 void PrintTestResults(TestResult_s const * const TestInfo);
 void ConvertTime(time_t const * const TimeToConvert, char TimeAsStr[], size_t TimeStrSize);
 
+/*======================================================================================================================*/
+
 int main(int argc, char *argv[])
  {
   int NInt;
   int ArgResult;
-  int TestID;
   //int i;
-  int NetResult;
-  sqlite3 *conn;
-  time_t CurrentTime; 
-  char timebuf[100];
   PeriphBitField_s PeriphBF;
-  TestResult_s ResultData;
-  uint32_t TimeOut;
-
-  TestData_s TestData;
-  uint8_t TestPattern[MAX_TEST_PATTERN_SIZE] = {0};
 
   //ansi clear screen
   printf("\033[2J\033[H");
@@ -52,32 +54,28 @@ int main(int argc, char *argv[])
   //  }
   
   ArgResult = CheckArgs(argc, argv, &NInt, &PeriphBF);
-  if(ArgResult == 0)
+  
+  switch(ArgResult)
    {
-    CreateLoadDatabase(&conn); // Yes, the given pointer to database must be given as pointer to pointer to database because it's address is updated in this function.
-    TestID = GetLastTestIDFromDataBase(&conn);
-    TestID++;
-
-    time(&CurrentTime);
-    ConvertTime(&CurrentTime, timebuf,sizeof(timebuf));
-
-    PrepereData(&TestData, TestPattern, &TimeOut, PeriphBF, NInt, TestID);
-
-    PrintPreperedData(&TestData, TestPattern);
-    
-    InitNetwork();
-    SendCommandToNetwork(&TestData, TestPattern);
-    NetResult = WaitForResponse(&ResultData, TimeOut);
-    CloseNetwork();
-    if(NetResult == 0)
-     {
-      PrintTestResults(&ResultData);
-     }
-    WriteToDataBase(&conn, ResultData.Test_ID, timebuf, ResultData.TestResult);
+    case ARG_ERROR_RESULT: 
+      PrintErrorMessage(argc, argv);
+     break;
+    case ARG_HELP_RESULT : 
+      PrinthelpMessage(argv[0]);
+     break;
+    case ARG_TEST_RESULT : 
+      ReqDevForMakingTest(NInt, PeriphBF);
+     break;
+    case ARG_RESET_RESULT: 
+      ReqDevForMakingReset();
+     break;
+    default:
+     break;
    }
-
   return 0;
  }
+
+/*======================================================================================================================*/
 
 int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
  {
@@ -119,8 +117,10 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
              BFResult->ADC_bf = 1;
             break;
            case 'h':     
-             PrinthelpMessage(argv[0]);
-             return 1;
+             return ARG_HELP_RESULT;
+            break;
+           case 'r':
+             return ARG_RESET_RESULT;
             break;
          }
        }
@@ -128,9 +128,7 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
    }
   if(*(uint8_t *)BFResult == 0) /* No prepheral loaded */
    {
-    fprintf(stderr, "No peripheral was selected.\n\r");
-    PrinthelpMessage(argv[0]);
-    return 1;
+    return ARG_ERROR_RESULT;
    }
   if(!nintloaded)
    {
@@ -142,23 +140,75 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
     *NInt = 1;
    }            
 
-  return 0;
+  return ARG_TEST_RESULT;
+ }
+
+void ReqDevForMakingReset()
+ {
+/*  ---------------------------------------------------  */
+  InitNetwork();
+  SendCommandToNetwork(&ResetCondition, NULL);
+  //WaitForResponse(&ResultData, TimeOut);
+  CloseNetwork();
+/*  ---------------------------------------------------  */
+ }
+
+void ReqDevForMakingTest(int NInt, PeriphBitField_s PeriphBF)
+ {
+  int TestID;
+  int NetResult;
+  static sqlite3 *conn;
+  time_t CurrentTime; 
+  char timebuf[100];
+
+  TestResult_s ResultData;
+  uint32_t TimeOut;
+
+  TestData_s TestData;
+  uint8_t TestPattern[MAX_TEST_PATTERN_SIZE] = {0};
+
+  CreateLoadDatabase(&conn); // Yes, the given pointer to database must be given as pointer to pointer to database because it's address is updated in this function.
+  TestID = GetLastTestIDFromDataBase(&conn);
+  TestID++;
+  time(&CurrentTime);
+  ConvertTime(&CurrentTime, timebuf,sizeof(timebuf));
+  PrepereData(&TestData, TestPattern, &TimeOut, PeriphBF, NInt, TestID);
+  PrintPreperedData(&TestData, TestPattern);
+  
+/*  ---------------------------------------------------  */
+  InitNetwork();
+  SendCommandToNetwork(&TestData, TestPattern);
+  NetResult = WaitForResponse(&ResultData, TimeOut);
+  CloseNetwork();
+/*  ---------------------------------------------------  */
+
+  if(NetResult == 0)
+   {
+    PrintTestResults(&ResultData);
+   }
+  WriteToDataBase(&conn, ResultData.Test_ID, timebuf, ResultData.TestResult);
  }
 
 void PrinthelpMessage(char *ProgName)
  {
   char *fname = basename(ProgName);
   printf("To use the program it's needed to type the next parameters:\n\r");
-  printf("%s [test [t][u][s][i][a][r]] [n] \n\r", fname);
+  printf("%s [t][u][s][i][a][r] [n] \n\r", fname);
   printf("t  - Timer\n\r");
   printf("u  - UART/USART\n\r");
   printf("s  - SPI\n\r");
   printf("i  - I2C\n\r");
   printf("a  - ADC\n\r");
+  printf("r  - To reset the board.");
   printf("nx - Number of interactions. Where x is number. Default is 1.");
   printf("Or to type h to see the help message.\n\r");
  }
 
+void PrintErrorMessage(int argc, char *argv[])
+ {
+  fprintf(stderr, "No peripheral was selected.\n\r");
+  PrinthelpMessage(argv[0]);
+ }
 
 void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, uint32_t NInt, uint32_t TestID)
  {
@@ -214,7 +264,7 @@ void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPatt
   uint8_t i;
   uint8_t Devs;
   bool NoPiping;
-  NoPiping = isatty(STDOUT_FILENO);
+  NoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
   printf("\n\r");
   printf("Running the test...\n\r");
@@ -286,7 +336,7 @@ void PrintTestResults(TestResult_s const * const TestInfo)
   bool TRes;
   uint8_t MaxNameLen;
   bool NoPiping;
-  NoPiping = isatty(STDOUT_FILENO);
+  NoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
   printf("The test Results:\n\r");
   printf("Test ID: %d\n\r", TestInfo->Test_ID);
@@ -337,4 +387,4 @@ void ConvertTime(time_t const * const TimeToConvert, char TimeAsStr[], size_t Ti
   strftime(TimeAsStr, TimeStrSize, "%G/%m/%d - %H:%M:%S", &tmp);  
  }
 
-
+/*======================================================================================================================*/

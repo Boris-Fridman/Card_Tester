@@ -4,16 +4,21 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+/*======================================================================================================================*/
+
 #define DB_FILENAME "tests.sqlite3"
 
+/*======================================================================================================================*/
 
 void PrintDBError(int ErrorCode);
+
+/*======================================================================================================================*/
 
 int CreateLoadDatabase(sqlite3 **conn)
  {
   int result;
   bool NoPiping;
-  NoPiping = isatty(STDERR_FILENO);
+  NoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
   if(*conn == NULL)
    return -2;  /* The pointer to the database wasn't given. */
@@ -42,10 +47,10 @@ int CreateLoadDatabase(sqlite3 **conn)
 
 int GetLastTestIDFromDataBase(sqlite3 **conn)
  {
-  int result, valtoret = 0;
+  int result, valtoret = 0, v;
   sqlite3_stmt* stmt;
   bool NoPiping;
-  NoPiping = isatty(STDERR_FILENO);
+  NoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
   result = sqlite3_open(DB_FILENAME, conn);
   if(result != SQLITE_OK)
@@ -69,7 +74,11 @@ int GetLastTestIDFromDataBase(sqlite3 **conn)
        {
         result = sqlite3_step(stmt);
         if(result == SQLITE_ROW)
-        valtoret = sqlite3_column_int(stmt,0);
+         {
+          v = sqlite3_column_int(stmt,0);
+          valtoret = MAX(valtoret, v);
+         }
+         
        }
       while(result == SQLITE_ROW);
      }
@@ -129,7 +138,7 @@ int GetLastTestIDFromDataBase(sqlite3 **conn)
 void PrintDBError(int ErrorCode)
  {
   bool NoPiping;
-  NoPiping = isatty(STDERR_FILENO);
+  NoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
   if(NoPiping) fprintf(stderr, "%s", ResultColors[!ErrorCode]);
   switch(ErrorCode)
    {
@@ -167,3 +176,7 @@ void PrintDBError(int ErrorCode)
    }
   if(NoPiping) fprintf(stderr, "%s", TermColorsReset);
  }
+
+
+/*======================================================================================================================*/
+

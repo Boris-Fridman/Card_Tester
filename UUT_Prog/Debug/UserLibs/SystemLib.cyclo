@@ -2,3 +2,5 @@
 ../UserLibs/SystemLib.c:41:5:vrtprintf	1
 ../UserLibs/SystemLib.c:48:5:rtprintf	1
 ../UserLibs/SystemLib.c:63:5:_write	2
+../UserLibs/SystemLib.c:77:6:AdjustIntVectTable	1
+../UserLibs/SystemLib.c:99:15:CheckResetReason	6

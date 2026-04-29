@@ -74,5 +74,38 @@ int _write(int file, char *ptr, int len)
 return len;
 }
 
+void AdjustIntVectTable()  /* Adjusts Interrupt Vector Table MCU pointer according to code location in flash memory. */
+ {
+  __disable_irq();
+#ifdef __GNUC__     // In case of GCC compiler
+  extern void *g_pfnVectors[];
+  SCB->VTOR = (uint32_t)g_pfnVectors;  // In case of GCC compiler
+#endif
+#ifdef __ICCARM__  // In case of IAR compiler
+  extern void __vector_table;
+  SCB->VTOR = (uint32_t)&__vector_table;  // In case of IAR compiler
+#endif
+#ifdef __CC_ARM    // In case of Keil compiler  -- Not tested yet.
+  extern void __Vectors;
+  SCB->VTOR = (uint32_t)&__Vectors;  // In case of Keil compiler  -- Not tested yet.
+#endif
+  __enable_irq();
+ }
+
+
+
+uint8_t RestFlags[]={RCC_FLAG_PORRST, RCC_FLAG_BORRST, RCC_FLAG_IWDGRST, RCC_FLAG_SFTRST, RCC_FLAG_PINRST};
+
+ResetReason_e CheckResetReason()
+ {
+  ResetReason_e i;
+  for(i = 0; i < E_NUM_RESET_FLAGS; i++)
+   {
+    if(__HAL_RCC_GET_FLAG(RestFlags[i]))
+     break;
+   }
+  __HAL_RCC_CLEAR_RESET_FLAGS();  // Clearing flags to prevent their existence at the next reason.
+  return i;
+ }
 
 

@@ -36,13 +36,13 @@
 
 
 
-/*
+/**
  * Min / Max macros
  */
 #define MAX(X, Y) ( (X) > (Y) ? (X) : (Y) )           /* The macro returning the biggest from the two values.  */
 #define MIN(X, Y) ( (X) < (Y) ? (X) : (Y) )           /* The macro returning the smallest from the two values. */
 
-/*
+/**
  * Div macros
  */
 #define DIV_RND(X,Y)    ( ((X) + (Y) / 2) / (Y) )     /* Deviation with rounding.      10/6 will give 2 and 10/3 will give 3  */
@@ -50,7 +50,7 @@
 #define DIV_RND_DN(X,Y) ( (X) / (Y)             )     /* Deviation with rounding down. 10/6 will give 1 and 10/3 will give 3 Regular deviation equal to regular "/". Is defined for compliation the previous macros deviations */
 
 
-/*
+/**
  * Test data definitions
  */
 
@@ -65,7 +65,7 @@
 #define MAX_ADC_CHECK_TIME      50          /* µs  */     /* Maximal time period required for testing ADC in one interration is given in micorseconds.*/
 
 
-/*
+/**
  * Internet information for sending and receiving call-events.
  */
 #define HOST_NAME              "CardTester"               /* Server Host Name with which the it is regognized in DHCP Connection */
@@ -134,11 +134,12 @@ typedef struct __attribute__((packed)) TestResult_s /* The attribute "__attribut
 #define ADC_Flag   (1 << E_ADC)
 
 
- extern char const * const ResultColors[];
- extern char const * const ResultMessages[];
+extern char const * const ResultColors[];   /* Colors for showing results : [0] - for fail result and [1] - for pass result. */
+extern char const * const ResultMessages[]; /* Messages for showing result: [0] - for fail result and [1] - for pass result. */
 
- extern char const * const PeriphNames[E_NUM_PERIPHS];
+extern char const * const PeriphNames[E_NUM_PERIPHS]; /* Names for peripherals that the card can test. */
 
+extern TestData_s const ResetCondition;  /* Is used for making reset to the board card. */
 
 #define DEF_INIT_VAL 0xEF45AB12
 

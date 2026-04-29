@@ -155,6 +155,11 @@ void TesterTask(void *pvParameters)
    {
     if(pdPASS == xQueueReceive(TestReqQueue, &ReqMsg, portMAX_DELAY))
      {
+      if(!memcmp(&ReqMsg.TestData, &ResetCondition, sizeof(TestData_s)))
+       {
+        __HAL_RCC_CLEAR_RESET_FLAGS();  // Clearing all reset flags before making reset to ensure that the bootloader will detect the correct reset reason.
+        NVIC_SystemReset();             // Resetting Device.
+       }
       memset(&DevResults, 0, sizeof(DevResults));
       memset(&RespondedDevs, 0, sizeof(RespondedDevs));
       DevTestInfo.Bit_Pattern_Length = ReqMsg.TestData.Bit_Pattern_Length;
@@ -172,13 +177,12 @@ void TesterTask(void *pvParameters)
       MakeTest(&DevTestInfo, ReqMsg.TestData.Periph_B_F);
       for(;;)
        {
+        if(!memcmp((void*)&RespondedDevs, (void*)&(ReqMsg.TestData.Periph_B_F), sizeof(PeriphBitField_s)))    /* All requested devices responded. - The line is put before checking the queue to prevent hanging if no devices selected. */
+         break;
         if(pdPASS == xQueueReceive(TestRespQueue, &RespMsg, portMAX_DELAY))
          {
-
           *(uint8_t*)&RespondedDevs |= (1 << RespMsg.DevType);                                                /* Marking the device as responded. */
           *(uint8_t*)&DevResults    |= ((1 << RespMsg.DevType))*((uint8_t)RespMsg.Result);                    /* Marking the device's answer.     */
-          if(!memcmp((void*)&RespondedDevs, (void*)&(ReqMsg.TestData.Periph_B_F), sizeof(PeriphBitField_s)))  /* All requested devices responded. */
-           break;
          }
        }
       GiveResults(DevResults, ReqMsg.TestData.Periph_B_F, ReqMsg.TestData.Test_ID);
@@ -203,7 +207,7 @@ void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F)
   uint8_t PeriphFlags = *(uint8_t*)&Periph_B_F;
   for(i = 0; i < E_NUM_PERIPHS; i++)
    {
-    if((PeriphFlags >> i)&0x01)
+    if((PeriphFlags >> i) & 0x01)
      ReqDevTest(DevTestInfo, i);
    }
  }

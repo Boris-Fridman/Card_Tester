@@ -7,21 +7,16 @@
 #include <netdb.h>
 #include <unistd.h>
 
-
-
-// static int TestID;                     // Defined temperary for test. Will be removed.
-// static PeriphBitField_s Periph_B_F;    // Defined temperary for test. Will be removed.
-
-
-
+/*======================================================================================================================*/
 static struct sockaddr_in dest_addr;
-static struct hostent *host;
 static int sockfd;
-
+/*======================================================================================================================*/
 int InitNetwork()
  {
   bool NoPiping;
-  NoPiping = isatty(STDERR_FILENO);
+  struct hostent *host;
+
+  NoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
   host = gethostbyname(HOST_NAME);
   if(host == NULL)
@@ -55,17 +50,14 @@ void CloseNetwork()
   close(sockfd);
  }
 
-int SendCommandToNetwork(TestData_s *TestData, uint8_t TestPattern[])
+int SendCommandToNetwork(TestData_s const * const TestData, uint8_t TestPattern[])
  {
-  // TestID = TestData->Test_ID;          // Defined for test only. Will be removed.
-  // Periph_B_F = TestData->Periph_B_F;   // Defined for test only. Will be removed.
-
   uint8_t *Pack;
   size_t PackSizeNetto, PackSizeFull;
   ssize_t result;
   bool StdErrNoPiping, StdOutNoPiping;
-  StdErrNoPiping = isatty(STDERR_FILENO);
-  StdOutNoPiping = isatty(STDOUT_FILENO);
+  StdErrNoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
+  StdOutNoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
   PackSizeNetto = sizeof(TestData_s) + TestData->Bit_Pattern_Length;
   PackSizeFull = PackSizeNetto + CRC_SIZE;
@@ -104,21 +96,14 @@ int SendCommandToNetwork(TestData_s *TestData, uint8_t TestPattern[])
 
 int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
  {
-  // int r;                                                               // Defined for test only. Will be removed.
-  // ResultData->Periph_B_F = Periph_B_F;                                 // Defined for test only. Will be removed.
-  // ResultData->Test_ID = TestID;                                        // Defined for test only. Will be removed.
-  // r = rand();                                                          // Defined for test only. Will be removed.
-  // ResultData->TestResult = (r % 2) ? E_TEST_SUCCEEDED : E_TEST_FAILED; // Defined for test only. Will be removed.
-
-
   struct timeval tv;
   uint8_t buffer[BUFFER_SIZE];
   static struct sockaddr_in client_addr;
   socklen_t addr_len;
 
   bool StdErrNoPiping, StdOutNoPiping;
-  StdErrNoPiping = isatty(STDERR_FILENO);
-  StdOutNoPiping = isatty(STDOUT_FILENO);
+  StdErrNoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
+  StdOutNoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
   
   addr_len = sizeof(client_addr);
 
@@ -157,4 +142,4 @@ int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
   return -1;
  }
 
-
+/*======================================================================================================================*/

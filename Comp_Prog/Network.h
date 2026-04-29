@@ -8,7 +8,7 @@
 int InitNetwork();
 void CloseNetwork();
 
-int SendCommandToNetwork(TestData_s *TestData, uint8_t TestPattern[]);
+int SendCommandToNetwork(TestData_s const * const TestData, uint8_t TestPattern[]);
 int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut);
 
 #endif  //  ____Network_h__
