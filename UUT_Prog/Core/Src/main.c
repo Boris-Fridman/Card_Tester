@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "adc.h"
+#include "crc.h"
 #include "dac.h"
 #include "dma.h"
 #include "i2c.h"
@@ -117,6 +118,7 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM6_Init();
   MX_TIM2_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 #ifdef DEBUG
   __HAL_DBGMCU_FREEZE_TIM6();  // Prevents jumping to the timer handler during stepping in debugging.

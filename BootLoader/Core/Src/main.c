@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "crc.h"
 #include "lwip.h"
 #include "usart.h"
 #include "gpio.h"
@@ -26,6 +27,8 @@
 /* USER CODE BEGIN Includes */
 #include "CommonData.h"
 #include "SystemLib.h"
+#include "netif.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -95,8 +98,8 @@ int main(void)
   MX_GPIO_Init();
   MX_USART3_UART_Init();
   MX_LWIP_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
-
   printf("\033[2J\033[H");  //ansi clear screen.
   printf(TermColorsReset);  //ansi reset colors in screen.
   printf("Card Tester BootLoader");

@@ -49,6 +49,14 @@
 #define DIV_RND_UP(X,Y) ( ((X) + (Y) - 1) / (Y) )     /* Deviation with rounding up.   10/6 will give 2 and 10/3 will give 4  */
 #define DIV_RND_DN(X,Y) ( (X) / (Y)             )     /* Deviation with rounding down. 10/6 will give 1 and 10/3 will give 3 Regular deviation equal to regular "/". Is defined for compliation the previous macros deviations */
 
+/**
+ * Macro for preventing warnings in case of unused variables.
+ */
+#if !defined(UNUSED)
+#define UNUSED(X) (void)X      /* To avoid gcc/g++ warnings */
+#endif /* UNUSED */
+
+
 
 /**
  * Test data definitions
@@ -68,7 +76,8 @@
 /**
  * Internet information for sending and receiving call-events.
  */
-#define HOST_NAME              "CardTester"               /* Server Host Name with which the it is regognized in DHCP Connection */
+#define HOST_NAME              "CardTester"               /* Server Host Name with which the DHCP Connection is recognized. */
+#define BL_HOST_NAME           "BL_of_CardTester"        /* Server Host Name for BootLoader with which the DHCP Connection is recognized. */
 #define DESTIN_IP              "192.168.1.113"            /* Server IP address to which are sent the call messages. */
 #define DESTIN_PORT             8080                      /* Server port to which are sent the call messages. */
 #define BUFFER_SIZE             1024                      /* The length in bytes, of the buffer pointed by the buf paramter that is used by the recvfrom() function. */
