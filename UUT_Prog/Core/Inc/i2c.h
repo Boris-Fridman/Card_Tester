@@ -44,6 +44,7 @@ void MX_I2C1_Init(void);
 void MX_I2C2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+HAL_StatusTypeDef HAL_I2C_Slave_Abort_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddress);
 
 /* USER CODE END Prototypes */
 

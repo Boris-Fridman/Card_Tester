@@ -1,3 +1,4 @@
+#include <main.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -41,9 +42,14 @@ int main(int argc, char *argv[])
   int ArgResult;
   //int i;
   PeriphBitField_s PeriphBF;
+  bool NoPiping;
+  NoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
   //ansi clear screen
-  printf("\033[2J\033[H");
+  if(NoPiping)
+   printf("\033[2J\033[H");
+  else
+   printf("\n\r");
   
   //code
   srand(time(NULL));
@@ -206,6 +212,7 @@ void PrinthelpMessage(char *ProgName)
 
 void PrintErrorMessage(int argc, char *argv[])
  {
+  UNUSED(argc);
   fprintf(stderr, "No peripheral was selected.\n\r");
   PrinthelpMessage(argv[0]);
  }
@@ -221,8 +228,8 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
     if(PeriphBF.I2C_bf)   MinFreq = MIN(MinFreq, MIN_I2C_FREQUENCY);
     if(PeriphBF.SPI_bf)   MinFreq = MIN(MinFreq, MIN_SPI_FREQUENCY);
     if(PeriphBF.UART_bf)  MinFreq = MIN(MinFreq, MIN_UART_FREQUENCY);
+    TestData->Bit_Pattern_Length = rand() % MAX_TEST_PATTERN_SIZE + 1; // MAX(1, rand() % MAX_TEST_PATTERN_SIZE);  /* Determining Test Pattern Length randomly starting from 1, but less than Maximum permitted length. */
     MaxAddDelay += DIV_RND_UP(1000 * TestData->Bit_Pattern_Length * 8 , MinFreq);
-    TestData->Bit_Pattern_Length = MAX(1, rand() % MAX_TEST_PATTERN_SIZE);  /* Determining Test Pattern Length randomly starting from 1, but less than Maximum permitted length. */
     for(uint8_t i = 0; i < TestData->Bit_Pattern_Length; i++)
      {
       TestPattern[i] = rand() % 256;

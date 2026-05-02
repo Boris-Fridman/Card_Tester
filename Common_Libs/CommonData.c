@@ -11,7 +11,7 @@ char const * const PeriphNames[E_NUM_PERIPHS] = {"Timer", "UART", "SPI", "I2C", 
 
 /*======================================================================================================================*/
 
-PeriphBitField_s const ResetPeriphBitField = {.Timer_bf = 0, .UART_bf = 0, .SPI_bf = 0, .I2C_bf = 0, .ADC_bf = 0, .Reserved = 0};
+PeriphBitField_s const ResetPeriphBitField = {.Timer_bf = 0, .UART_bf = 0, .SPI_bf = 0, .I2C_bf = 0, .ADC_bf = 0, .Reserved = 0, .OTA_UPDATE_bf = 1};
 TestData_s const ResetCondition = {.Bit_Pattern_Length = 0, .Num_Interations = 0, .Periph_B_F = ResetPeriphBitField, .TestVoltage = 0, .Test_ID = 0};
 
 /*======================================================================================================================*/

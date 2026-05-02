@@ -6,7 +6,7 @@
 #include <CommonData.h>
 
 /**
- * @brief Preperes the network task.
+ * @brief Prepares the network task.
  *
  * @code{c}
  * void NetworkInit(void);

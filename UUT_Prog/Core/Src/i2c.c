@@ -337,6 +337,124 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 }
 
 /* USER CODE BEGIN 1 */
+HAL_StatusTypeDef HAL_I2C_Slave_Abort_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddress)
+ {
+  HAL_DMA_Abort(hi2c->hdmarx);
+  HAL_DMA_Abort(hi2c->hdmatx);
+
+  //__HAL_I2C_DISABLE_IT(hi2c, I2C_IT_EVT | I2C_IT_ERR | I2C_IT_BUF);
+
+
+  switch((uint32_t)hi2c->Instance)
+   {
+#ifdef I2C1
+    case (uint32_t)I2C1:
+      HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
+      HAL_NVIC_DisableIRQ(I2C1_ER_IRQn);
+      __HAL_RCC_I2C1_FORCE_RESET();
+      __HAL_RCC_I2C1_RELEASE_RESET();
+     break;
+#endif
+#ifdef I2C2
+    case (uint32_t)I2C2:
+      HAL_NVIC_DisableIRQ(I2C2_EV_IRQn);
+      HAL_NVIC_DisableIRQ(I2C2_ER_IRQn);
+      __HAL_RCC_I2C2_FORCE_RESET();
+      __HAL_RCC_I2C2_RELEASE_RESET();
+     break;
+#endif
+#ifdef I2C3
+    case (uint32_t)I2C3:
+      HAL_NVIC_DisableIRQ(I2C3_EV_IRQn);
+      HAL_NVIC_DisableIRQ(I2C3_ER_IRQn);
+      __HAL_RCC_I2C3_FORCE_RESET();
+      __HAL_RCC_I2C3_RELEASE_RESET();
+     break;
+#endif
+#ifdef I2C4
+    case (uint32_t)I2C4:
+      HAL_NVIC_DisableIRQ(I2C4_EV_IRQn);
+      HAL_NVIC_DisableIRQ(I2C4_ER_IRQn);
+      __HAL_RCC_I2C4_FORCE_RESET();
+      __HAL_RCC_I2C4_RELEASE_RESET();
+     break;
+#endif
+#ifdef I2C5
+    case (uint32_t)I2C5:
+      HAL_NVIC_DisableIRQ(I2C5_EV_IRQn);
+      HAL_NVIC_DisableIRQ(I2C5_ER_IRQn);
+      __HAL_RCC_I2C5_FORCE_RESET();
+      __HAL_RCC_I2C5_RELEASE_RESET();
+     break;
+#endif
+#ifdef I2C6
+    case (uint32_t)I2C6:
+      HAL_NVIC_DisableIRQ(I2C6_EV_IRQn);
+      HAL_NVIC_DisableIRQ(I2C6_ER_IRQn);
+      __HAL_RCC_I2C6_FORCE_RESET();
+      __HAL_RCC_I2C6_RELEASE_RESET();
+     break;
+#endif
+#ifdef I2C7
+    case (uint32_t)I2C7:
+      HAL_NVIC_DisableIRQ(I2C7_EV_IRQn);
+      HAL_NVIC_DisableIRQ(I2C7_ER_IRQn);
+      __HAL_RCC_I2C7_FORCE_RESET();
+      __HAL_RCC_I2C7_RELEASE_RESET();
+     break;
+#endif
+   }
+
+  HAL_I2C_Init(hi2c); // Re-initialize to your original settings
+
+  switch((uint32_t)hi2c->Instance)
+   {
+#ifdef I2C1
+    case (uint32_t)I2C1:
+      HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
+      HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
+     break;
+#endif
+#ifdef I2C2
+    case (uint32_t)I2C2:
+      HAL_NVIC_EnableIRQ(I2C2_EV_IRQn);
+      HAL_NVIC_EnableIRQ(I2C2_ER_IRQn);
+     break;
+#endif
+#ifdef I2C3
+    case (uint32_t)I2C3:
+      HAL_NVIC_EnableIRQ(I2C3_EV_IRQn);
+      HAL_NVIC_EnableIRQ(I2C3_ER_IRQn);
+     break;
+#endif
+#ifdef I2C4
+    case (uint32_t)I2C4:
+      HAL_NVIC_EnableIRQ(I2C4_EV_IRQn);
+      HAL_NVIC_EnableIRQ(I2C4_ER_IRQn);
+     break;
+#endif
+#ifdef I2C5
+    case (uint32_t)I2C5:
+      HAL_NVIC_EnableIRQ(I2C5_EV_IRQn);
+      HAL_NVIC_EnableIRQ(I2C5_ER_IRQn);
+     break;
+#endif
+#ifdef I2C6
+    case (uint32_t)I2C6:
+      HAL_NVIC_EnableIRQ(I2C6_EV_IRQn);
+      HAL_NVIC_EnableIRQ(I2C6_ER_IRQn);
+     break;
+#endif
+#ifdef I2C7
+    case (uint32_t)I2C7:
+      HAL_NVIC_EnableIRQ(I2C7_EV_IRQn);
+      HAL_NVIC_EnableIRQ(I2C7_ER_IRQn);
+     break;
+#endif
+   }
+
+  return HAL_OK;
+ }
 
 /* USER CODE END 1 */
 

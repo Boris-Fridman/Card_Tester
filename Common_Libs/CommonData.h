@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-/*
+/**
  * Terminal Colors
  *
  * The information about colors can be found in the sine:
@@ -57,9 +57,9 @@
 #define MAX_POSSIBLE_FREAUENCY  1000000000  /* Hz */      /* Maximal possible frequency used for calculation maximal timeout */
 #define MIN_I2C_FREQUENCY       100000      /* Hz */
 #define MIN_SPI_FREQUENCY       200000      /* Hz */
-#define MIN_UART_FREQUENCY      50000       /* Hz */
+#define MIN_UART_FREQUENCY      50          /* Hz */
 
-#define MAX_TEST_PATTERN_SIZE   100                       /* Maximum permitted Length of pattern. */
+#define MAX_TEST_PATTERN_SIZE   200                       /* Maximum permitted Length of pattern. */
 #define MIN_TIME_OUT            1000        /* ms  */     /* Minimal timeout to wait for response. */
 
 #define MAX_ADC_CHECK_TIME      50          /* µs  */     /* Maximal time period required for testing ADC in one interration is given in micorseconds.*/
@@ -100,12 +100,13 @@ typedef enum __attribute__((__packed__)) TestResType_e  // The attribute "__attr
 
 typedef struct PeriphBitField_s
  {
-  uint8_t Timer_bf     : 1;
-  uint8_t UART_bf      : 1;
-  uint8_t SPI_bf       : 1;
-  uint8_t I2C_bf       : 1;
-  uint8_t ADC_bf       : 1;
-  uint8_t Reserved     : 3;
+  uint8_t Timer_bf       : 1;
+  uint8_t UART_bf        : 1;
+  uint8_t SPI_bf         : 1;
+  uint8_t I2C_bf         : 1;
+  uint8_t ADC_bf         : 1;
+  uint8_t OTA_UPDATE_bf  : 1;
+  uint8_t Reserved       : 2;
  }PeriphBitField_s;
 
  typedef struct __attribute__((packed)) TestData_s /* The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending. */

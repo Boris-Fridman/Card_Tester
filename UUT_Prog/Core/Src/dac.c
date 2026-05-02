@@ -104,7 +104,7 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef* dacHandle)
     __HAL_LINKDMA(dacHandle,DMA_Handle1,hdma_dac1);
 
     /* DAC interrupt Init */
-    HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 15, 0);
+    HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
   /* USER CODE BEGIN DAC_MspInit 1 */
 

@@ -1,4 +1,5 @@
 "./Common_Libs/CommonData.o"
+"./Common_Libs/SystemLib.o"
 "./Core/Src/adc.o"
 "./Core/Src/dac.o"
 "./Core/Src/dma.o"
@@ -136,5 +137,4 @@
 "./Middlewares/Third_Party/LwIP/src/netif/ppp/vj.o"
 "./Middlewares/Third_Party/LwIP/system/OS/sys_arch.o"
 "./UserLibs/Network.o"
-"./UserLibs/SystemLib.o"
 "./UserLibs/Tester.o"

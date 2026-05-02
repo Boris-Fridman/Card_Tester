@@ -267,7 +267,8 @@ bool TestUART(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
       TestResult = !memcmp(TestPattern, MedTestPattern, TestPatLen);
       if(!TestResult) break;
      }
-
+    HAL_UART_Abort(&INSPECTOR_UART);  /* Aborting Inspector UART before the "MedTestPattern[]" and "RecvPat[]" are disappeared on exit to prevent accessing to the incorrect memory. */
+    HAL_UART_Abort(&INSPECTED_UART);  /* Aborting Inspected UART before the "MedTestPattern[]" and "RecvPat[]" are disappeared on exit to prevent accessing to the incorrect memory. */
     return TestResult;
  }
 
@@ -332,6 +333,8 @@ bool TestSPI(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
     if(!TestResult) break;
    }
 
+  HAL_SPI_Abort(&INSPECTOR_SPI);  /* Aborting Inspector SPI before the "MedTestPattern[]" and "RecvPat[]" are disappeared on exit to prevent accessing to the incorrect memory. */
+  HAL_SPI_Abort(&INSPECTED_SPI);  /* Aborting Inspected SPI before the "MedTestPattern[]" and "RecvPat[]" are disappeared on exit to prevent accessing to the incorrect memory. */
   return TestResult;
  }
 
@@ -358,6 +361,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
 
 static SemaphoreHandle_t I2CTestSem;
+
 
 /*
  * TestI2C(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
@@ -394,8 +398,25 @@ bool TestI2C(uint8_t NInt, uint8_t TestPattern[], uint8_t TestPatLen)
     if(!TestResult) break;
    }
 
+/*
+ * Aborting DMA and Reinitializing the Inspector and Inspected I2Cs before the "MedTestPattern[]" and "RecvPat[]"
+ * are disappeared on exit to prevent accessing to the incorrect memory.
+ */
+  HAL_DMA_Abort(INSPECTOR_I2C.hdmarx);
+  HAL_DMA_Abort(INSPECTOR_I2C.hdmatx);
+
+  HAL_DMA_Abort(INSPECTED_I2C.hdmarx);
+  HAL_DMA_Abort(INSPECTED_I2C.hdmatx);
+
+  HAL_I2C_DeInit(&INSPECTOR_I2C);
+  HAL_I2C_DeInit(&INSPECTED_I2C);
+
+  HAL_I2C_Init(&INSPECTOR_I2C);
+  HAL_I2C_Init(&INSPECTED_I2C);
+
   return TestResult;
  }
+
 
 
 void HAL_I2C_RxCpltCallback(I2C_HandleTypeDef *hi2c)
@@ -441,7 +462,7 @@ static SemaphoreHandle_t ADCTestSem;
 
 bool TestADC(uint8_t NInt, int32_t TestVoltage)
  {
-  bool TestResult;
+  bool TestResult = true;
   uint8_t i;
   uint32_t MaxTimeToWait;
   uint32_t RoughVoltageDAC;
@@ -453,33 +474,38 @@ bool TestADC(uint8_t NInt, int32_t TestVoltage)
 
   xSemaphoreTake(ADCTestSem, 0);  /* Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt. */
 
-
   TestResult = !HAL_ADC_ConfigChannel(&INSPECTED_ADC, &VrefintChannel);
+  if(!TestResult) return TestResult;
   TestResult = !HAL_ADC_Start_DMA(&INSPECTED_ADC, &RoughVrefInt, 1);
+  if(!TestResult) return TestResult;
 
   TestResult = xSemaphoreTake(ADCTestSem, pdMS_TO_TICKS(MaxTimeToWait));
-  TestResult = !HAL_ADC_Stop_DMA(&INSPECTED_ADC);
+  TestResult &= !HAL_ADC_Stop_DMA(&INSPECTED_ADC);
+  if(!TestResult) return TestResult;
+
   VrefInt = DIV_RND(3300 * VREFIN_CAL , RoughVrefInt);
-
   RoughVoltageDAC = DIV_RND(TestVoltage*MAX_ROUGH_VOLTAGE, VrefInt);
+
   TestResult = !HAL_DAC_Start_DMA(&INSPECTOR_DAC, DAC_CHANNEL_1, &RoughVoltageDAC, 1, DAC_ALIGN_12B_R);
-  TestResult = !HAL_ADC_ConfigChannel(&INSPECTED_ADC, &TerstedChannel);
-  TestResult = xSemaphoreTake(ADCTestSem, pdMS_TO_TICKS(MaxTimeToWait));
-  for(i = 0; i < NInt; i++)
-   {
+  if(!TestResult) return TestResult;
+  TestResult &= !HAL_ADC_ConfigChannel(&INSPECTED_ADC, &TerstedChannel);
+  TestResult &= xSemaphoreTake(ADCTestSem, pdMS_TO_TICKS(MaxTimeToWait));
+  if(TestResult)
+   for(i = 0; i < NInt; i++)
+    {
 
-    TestResult = !HAL_ADC_Start_DMA(&INSPECTED_ADC, &ADCRoughData, 1);
-    if(!TestResult) break;
-    TestResult = xSemaphoreTake(ADCTestSem, pdMS_TO_TICKS(MaxTimeToWait));
-    if(!TestResult) break;
-    TestResult = !HAL_ADC_Stop_DMA(&INSPECTED_ADC);
-    if(!TestResult) break;
-    ADCVoltage = DIV_RND(ADCRoughData * VrefInt, MAX_ROUGH_VOLTAGE);
-    TestResult = abs(ADCVoltage - TestVoltage) <= ADC_PERMITTED_ERROR;
-    if(!TestResult) break;
+     TestResult = !HAL_ADC_Start_DMA(&INSPECTED_ADC, &ADCRoughData, 1);
+     if(!TestResult) break;
+     TestResult = xSemaphoreTake(ADCTestSem, pdMS_TO_TICKS(MaxTimeToWait));
+     /* if(!TestResult) break;  --  No need to break the loop here because it is needed previously to run the function "HAL_ADC_Stop_DMA()" anyway. */
+     TestResult &= !HAL_ADC_Stop_DMA(&INSPECTED_ADC);  /* Here is needed to make anding to the previouse TestResult anyway to break the loop here if the test result was "false" before. */
+     if(!TestResult) break;
+     ADCVoltage = DIV_RND(ADCRoughData * VrefInt, MAX_ROUGH_VOLTAGE);
+     TestResult = abs(ADCVoltage - TestVoltage) <= ADC_PERMITTED_ERROR;
+     if(!TestResult) break;
 
-   }
-  TestResult = !HAL_DAC_Stop_DMA(&INSPECTOR_DAC, DAC_CHANNEL_1);
+    }
+  TestResult &= !HAL_DAC_Stop_DMA(&INSPECTOR_DAC, DAC_CHANNEL_1);
 
 
   return TestResult;
@@ -545,7 +571,7 @@ static uint16_t NPerPairs = 2;
 
 bool TestTimer(uint8_t NInt, uint32_t TestTime)
  {
-  bool TestResult;
+  bool TestResult = true;
   uint8_t i;
   uint32_t MaxTimeToWait;
   if(TestTime <= 4)
@@ -554,23 +580,24 @@ bool TestTimer(uint8_t NInt, uint32_t TestTime)
   NPerPairs = 2*MAX(1, 1000/TestTime);
   xSemaphoreTake(TIMTestSem, 0);  /* Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt. */
 
-  HAL_TIM_PWM_Start(&INSPECTOR_TIM,INSPECTOR_TIM_CHANNEL);
+  TestResult = !HAL_TIM_PWM_Start(&INSPECTOR_TIM,INSPECTOR_TIM_CHANNEL);
+  if(!TestResult) return TestResult;
   SetPeriod(&INSPECTOR_TIM,INSPECTOR_TIM_CHANNEL, TestTime);
 
   cnt = 0;
-  HAL_TIM_IC_Start_IT(&INSPECTED_TIM, INSPECTED_TIM_CHANNEL);
+  TestResult &= !HAL_TIM_IC_Start_IT(&INSPECTED_TIM, INSPECTED_TIM_CHANNEL);
+  if(TestResult)
+   for(i = 0; i < NInt; i++)
+    {
+     cnt = 0;
+     TestResult = xSemaphoreTake(TIMTestSem, pdMS_TO_TICKS(MaxTimeToWait));
+     if(!TestResult) break;
+     TestResult = (abs(TestTime - MeasuredTime) < TIM_PERMITTED_ERROR);
+     if(!TestResult) break;
+    }
 
-  for(i = 0; i < NInt; i++)
-   {
-    cnt = 0;
-    TestResult = xSemaphoreTake(TIMTestSem, pdMS_TO_TICKS(MaxTimeToWait));
-    if(!TestResult) break;
-    TestResult = (abs(TestTime - MeasuredTime) < TIM_PERMITTED_ERROR);
-    if(!TestResult) break;
-   }
-
-  HAL_TIM_IC_Stop_IT(&INSPECTED_TIM, INSPECTED_TIM_CHANNEL);
-  HAL_TIM_PWM_Stop(&INSPECTOR_TIM,INSPECTOR_TIM_CHANNEL);
+  TestResult &= !HAL_TIM_IC_Stop_IT(&INSPECTED_TIM, INSPECTED_TIM_CHANNEL);
+  TestResult &= !HAL_TIM_PWM_Stop(&INSPECTOR_TIM,INSPECTOR_TIM_CHANNEL);
 
   return TestResult;
  }
