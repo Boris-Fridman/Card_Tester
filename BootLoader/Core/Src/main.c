@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "CommonData.h"
 #include "SystemLib.h"
+#include "Network.h"
 #include "netif.h"
 
 /* USER CODE END Includes */
@@ -111,6 +112,7 @@ int main(void)
   while (1)
   {
 	MX_LWIP_Process();
+	DoNetwork();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

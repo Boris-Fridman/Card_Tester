@@ -67,11 +67,10 @@
 #define MIN_SPI_FREQUENCY       200000      /* Hz */
 #define MIN_UART_FREQUENCY      50          /* Hz */
 
-#define MAX_TEST_PATTERN_SIZE   200                       /* Maximum permitted Length of pattern. */
+#define MAX_TEST_PATTERN_SIZE   200                       /* Maximum permitted Length of pattern. Also is used as the maximal size of code segment sent during OTA Update of the Test Program . */
 #define MIN_TIME_OUT            1000        /* ms  */     /* Minimal timeout to wait for response. */
 
 #define MAX_ADC_CHECK_TIME      50          /* µs  */     /* Maximal time period required for testing ADC in one interration is given in micorseconds.*/
-
 
 /**
  * Internet information for sending and receiving call-events.
@@ -158,8 +157,9 @@ uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal);
 void Add_CRC(uint8_t buf[], size_t len);
 bool CRC_Correct(uint8_t buf[], size_t len);
 
-
-
+#define START_FLASH_ADDRESS   0x08000000
+#define START_PROG_OFFSET     0x18000  // 0x00000    0x08000 0x10000 0x18000   0x20000  0x40000   0x80000   0xC0000
+#define START_PROG_ADDRESS    (START_FLASH_ADDRESS + START_PROG_OFFSET)
 
 #endif  //  ____CommonData_h__
 

@@ -18,7 +18,7 @@ int InitNetwork()
 
   NoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
-  host = gethostbyname(HOST_NAME);
+  host = gethostbyname(BL_HOST_NAME);
   if(host == NULL)
    {
     if(NoPiping)fprintf(stderr, TermRed);

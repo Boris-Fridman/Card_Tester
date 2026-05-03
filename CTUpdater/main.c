@@ -7,7 +7,8 @@
 #include "CommonData.h"
 #include "Network.h"
 #include "string.h"
-    
+#include "ProgImage.h"
+
 /*======================================================================================================================*/
 
 #define ARG_ERROR_RESULT -1
@@ -17,10 +18,10 @@
 
 /*======================================================================================================================*/
 
-int CheckArgs(int argc, char *argv[], char ImageImageFullPath[]);
+int CheckArgs(int argc, char *argv[], char ImageFullPathName[]);
 void PrintHelpMessage(char *ProgName);
 void PrintErrorMessage(int argc, char *argv[]);
-int ReqDevForBurning(char ImageImageFullPath[]);
+int ReqDevForBurning(char ImageFullPathName[]);
 void ReqDevForMakingReset();
 
 /*======================================================================================================================*/
@@ -28,7 +29,7 @@ void ReqDevForMakingReset();
 int main(int argc, char *argv[])
  {
   int ArgResult;
-  char ImageImageFullPath[500];
+  char ImageFullPathName[PATH_FILE_NAME_LEN];
   bool NoPiping;
   NoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
@@ -40,7 +41,7 @@ int main(int argc, char *argv[])
   
   //code
 
-  ArgResult = CheckArgs(argc, argv, ImageImageFullPath);
+  ArgResult = CheckArgs(argc, argv, ImageFullPathName);
    
 
   switch(ArgResult)
@@ -52,7 +53,7 @@ int main(int argc, char *argv[])
       PrintHelpMessage(argv[0]);
      break;
     case ARG_BURN_RESULT : 
-      ArgResult = ReqDevForBurning(ImageImageFullPath);
+      ArgResult = ReqDevForBurning(ImageFullPathName);
      break;
     case ARG_RESET_RESULT: 
       ReqDevForMakingReset();
@@ -68,20 +69,20 @@ int main(int argc, char *argv[])
 
 /*======================================================================================================================*/
 
-int CheckArgs(int argc, char *argv[], char ImageImageFullPath[])
+int CheckArgs(int argc, char *argv[], char ImageFullPathName[])
  {
   int i;
   if(argc<=1)
    return ARG_ERROR_RESULT;
-  for(i = 0; i < argc; i++)
+  for(i = 1; i < argc; i++)
    {
-    if(strcmp(argv[i], "h"))
+    if(!strcmp(argv[i], "h"))
      return ARG_HELP_RESULT;
-    if(strcmp(argv[i], "r"))
+    if(!strcmp(argv[i], "r"))
      return ARG_RESET_RESULT;
    }
 
-  strcpy(ImageImageFullPath, argv[1]);
+  strcpy(ImageFullPathName, argv[1]);
 
   return ARG_BURN_RESULT;
  }
@@ -105,10 +106,18 @@ void PrintErrorMessage(int argc, char *argv[])
  }
 
 
-int ReqDevForBurning(char ImageImageFullPath[])
+int ReqDevForBurning(char ImageFullPathName[])
  {
-  
-  return 0;
+  int Result = 0;
+  Result = InitNetwork();
+  if(Result == 0)
+   {
+    InitImage(ImageFullPathName);
+    SendImageToNetwork();
+    CloseImage();
+    CloseNetwork();
+   }
+  return Result;
  } 
 
  void ReqDevForMakingReset()

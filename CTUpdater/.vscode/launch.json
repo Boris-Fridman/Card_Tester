@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/TCUpdater",
-            "args": [],
+            "args": ["../UUT_Prog/Release/UUT_Prog.bin"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
