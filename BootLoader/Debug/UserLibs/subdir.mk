@@ -5,12 +5,15 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../UserLibs/Flash.c \
 ../UserLibs/Network.c 
 
 OBJS += \
+./UserLibs/Flash.o \
 ./UserLibs/Network.o 
 
 C_DEPS += \
+./UserLibs/Flash.d \
 ./UserLibs/Network.d 
 
 
@@ -21,7 +24,7 @@ UserLibs/%.o UserLibs/%.su UserLibs/%.cyclo: ../UserLibs/%.c UserLibs/subdir.mk
 clean: clean-UserLibs
 
 clean-UserLibs:
-	-$(RM) ./UserLibs/Network.cyclo ./UserLibs/Network.d ./UserLibs/Network.o ./UserLibs/Network.su
+	-$(RM) ./UserLibs/Flash.cyclo ./UserLibs/Flash.d ./UserLibs/Flash.o ./UserLibs/Flash.su ./UserLibs/Network.cyclo ./UserLibs/Network.d ./UserLibs/Network.o ./UserLibs/Network.su
 
 .PHONY: clean-UserLibs
 

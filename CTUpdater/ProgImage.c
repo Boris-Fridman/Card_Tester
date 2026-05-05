@@ -63,7 +63,7 @@ int SendImageToNetwork()
       NetPacket.Bit_Pattern_Length = NumReadBytes;
       NetPacket.Test_ID = START_PROG_ADDRESS + StartSegAddr;  
       SendCommandToNetwork(&NetPacket, CodeSegment);
-      //WaitForResponse(&Result, 0);  // In the future will be uncommented.
+      WaitForResponse(&Result, 0);  // In the future will be uncommented.
       StartSegAddr += NumReadBytes;
      }
    }

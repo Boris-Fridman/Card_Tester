@@ -22,6 +22,11 @@
 
 /* USER CODE BEGIN 0 */
 
+#include <stdio.h>
+#include "CommonData.h"
+
+void PrintProgInt();
+
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart4;
@@ -89,7 +94,7 @@ void MX_USART3_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART3_Init 2 */
-
+  PrintProgInt();
   /* USER CODE END USART3_Init 2 */
 
 }
@@ -386,6 +391,13 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
+void PrintProgInt()
+ {
+  printf("\033[2J\033[H");  //ansi clear screen.
+  printf(TermMagenta);
+  printf("Card Tester is started ...\n\r");
+  printf(TermColorsReset);  //ansi reset colors in screen.
+ }
 
 /* USER CODE END 1 */
 

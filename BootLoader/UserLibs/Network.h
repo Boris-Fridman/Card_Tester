@@ -14,7 +14,19 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-void DoNetwork();
+/*======================================================================================================================*/
+
+
+/**
+ * @brief Initializes the network UDP Server.
+ *
+ * @code
+ * void InitNetwork(void);
+ * @code
+ *
+ */
+void InitNetwork(void);
+
 
 
 #endif /* NETWORK_H_ */

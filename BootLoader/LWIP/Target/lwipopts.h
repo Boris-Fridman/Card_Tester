@@ -63,6 +63,10 @@
 #define LWIP_ETHERNET 1
 /*----- Value in opt.h for LWIP_DNS_SECURE: (LWIP_DNS_SECURE_RAND_XID | LWIP_DNS_SECURE_NO_MULTIPLE_OUTSTANDING | LWIP_DNS_SECURE_RAND_SRC_PORT) -*/
 #define LWIP_DNS_SECURE 7
+/*----- Default Value for LWIP_UDPLITE: 0 ---*/
+#define LWIP_UDPLITE 1
+/*----- Default Value for LWIP_TCP_SACK_OUT: 0 ---*/
+#define LWIP_TCP_SACK_OUT 1
 /*----- Value in opt.h for TCP_SND_QUEUELEN: (4*TCP_SND_BUF + (TCP_MSS - 1))/TCP_MSS -----*/
 #define TCP_SND_QUEUELEN 9
 /*----- Value in opt.h for TCP_SNDLOWAT: LWIP_MIN(LWIP_MAX(((TCP_SND_BUF)/2), (2 * TCP_MSS) + 1), (TCP_SND_BUF) - 1) -*/
@@ -107,8 +111,6 @@
 #define CHECKSUM_CHECK_ICMP6 0
 /*----- Default Value for NETIF_DEBUG: LWIP_DBG_OFF ---*/
 #define NETIF_DEBUG LWIP_DBG_ON
-/*----- Default Value for PBUF_DEBUG: LWIP_DBG_OFF ---*/
-#define PBUF_DEBUG LWIP_DBG_ON
 /*----- Default Value for ICMP_DEBUG: LWIP_DBG_OFF ---*/
 #define ICMP_DEBUG LWIP_DBG_ON
 /*----- Default Value for IP_DEBUG: LWIP_DBG_OFF ---*/

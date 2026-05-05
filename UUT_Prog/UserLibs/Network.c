@@ -39,7 +39,6 @@ TaskHandle_t xNewtworkTaskHandle;      /*  Handle to network task.          */
 
 void NetworkTask(void *pvParameters);
 void Wait_for_DHCP(void);
-void DecodeData(uint8_t Data[], size_t Len,  TestData_s *TestData, uint8_t **TestPattern);
 void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, TestResult_s TestResult);
 
 
@@ -112,16 +111,12 @@ void NetworkTask(void *pvParameters)
           rtprintf("%sReceived data from %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
           TestData_s TestData;
           uint8_t *TestPattern = NULL;
-          DecodeData(data, len, &TestData, &TestPattern);
+          DecodeReqData(data, len, &TestData, &TestPattern);
           netbuf_delete(buf);
 
           ReqForTest(TestData, TestPattern);
 
-          if(TestPattern)
-           {
-            free(TestPattern);
-            TestPattern = NULL;
-           }
+          FreeTestPattern(&TestPattern);
 
           TestResult_s TestResult = { .Test_ID = TestData.Test_ID, .Periph_B_F = TestData.Periph_B_F, .TestResult =  E_TEST_FAILED}; // Defiend temperary. will be moved to other place.
 //          TestResult.Test_ID = TestData.Test_ID;
@@ -170,26 +165,6 @@ void Wait_for_DHCP(void)
  }
 
 
-void DecodeData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern)
- {
-  uint8_t *Pack;
-  Pack = Data;
-
-  if(CRC_Correct(Pack, Len))
-   {
-    memcpy(TestData, Pack, sizeof(TestData_s));
-
-    *TestPattern = calloc(TestData->Bit_Pattern_Length, sizeof(uint8_t));
-    if(*TestPattern)
-     {
-      memcpy(*TestPattern, Data+sizeof(TestData_s),TestData->Bit_Pattern_Length);
-      //free(*TestPattern);  // At this moment the free command exists here, but in the future maybe it will be moved to another place after proceeding the data.
-     }
-   }
-
- }
-
-
 void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, TestResult_s TestResult)
  {
   struct netbuf *buf;
@@ -197,25 +172,19 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
   uint16_t port;
   uint8_t *Pack;
   size_t Len;
-  Len = sizeof(TestResult_s) + CRC_SIZE;
 
-  Pack = calloc(Len, sizeof(uint8_t));
+  Len = EncodeRespData(&TestResult, &Pack);
   if(Pack)
    {
-
-    memcpy(Pack, &TestResult, sizeof(TestResult_s));
-
-    Add_CRC(Pack, Len);
-
     buf = netbuf_new();
-    netbuf_ref(buf, Pack, sizeof(TestResult_s) + sizeof(uint32_t));
+    netbuf_ref(buf, Pack, Len);  //  netbuf_ref(buf, Pack, sizeof(TestResult_s) + sizeof(uint32_t));
     netconn_sendto(conn, buf, ip4addr, ipport);
     netbuf_delete(buf); /* Freeing buffer after sending */
     ip_str = ip4addr_ntoa(ip4addr);
     port = ipport;
     rtprintf("%sThe response was sent to %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
 
-    free(Pack);
+    FreeRespData(&Pack);
    }
 
 

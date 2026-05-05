@@ -56,6 +56,66 @@ bool CRC_Correct(uint8_t buf[], size_t len)
   return CalcCRC == RecvCRC;
  }
 
+void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern)
+ {
+  uint8_t *Pack;
+  Pack = Data;
+
+  if(CRC_Correct(Pack, Len))
+   {
+    memcpy(TestData, Pack, sizeof(TestData_s));
+
+    *TestPattern = calloc(TestData->Bit_Pattern_Length, sizeof(uint8_t));
+    if(*TestPattern)
+     {
+      memcpy(*TestPattern, Data+sizeof(TestData_s),TestData->Bit_Pattern_Length);
+
+      /* At the end of the usage with the returned data the "**TestPattern" must be freed by the "FreeTestPattern()" procedure. */
+      //free(*TestPattern); Not in use. the "**TestPattern" must be freed by the "FreeTestPattern()" procedure by the user.
+     }
+   }
+
+ }
+
+
+void FreeTestPattern(uint8_t **TestPattern)
+ {
+  if(*TestPattern != NULL)
+   {
+    free(*TestPattern);
+    *TestPattern = NULL;
+   }
+
+ }
+
+
+size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
+ {
+  size_t Len;
+  Len = sizeof(TestResult_s) + CRC_SIZE;
+  *RespData = calloc(Len, sizeof(uint8_t));
+  if(*RespData)
+   {
+    memcpy(*RespData, TestResult, sizeof(TestResult_s));
+    Add_CRC(*RespData, Len);
+   }
+  else
+   Len = 0;
+
+  return Len;
+ }
+
+void FreeRespData(uint8_t **RespData)
+ {
+  if(*RespData != NULL)
+   {
+    free(*RespData);
+    *RespData = NULL;
+   }
+ }
+
+
+
 /*======================================================================================================================*/
 
 

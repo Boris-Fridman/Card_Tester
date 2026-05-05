@@ -12,46 +12,79 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "lwip/udp.h"
+
 #include "api.h"
 #include "netif.h"
 #include "dhcp.h"
 #include "netbuf.h"
 
-bool NetworkLoaded = false;
+#include "Flash.h"
 
-void DoNetwork()
+/*======================================================================================================================*/
+
+static struct udp_pcb *upcb;
+
+/*======================================================================================================================*/
+
+
+/*======================================================================================================================*/
+
+void UDPReceiveCB(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
  {
-  extern struct netif gnetif;
-  static ip4_addr_t const *remote_ip;
-  static struct netif *netif = &gnetif;
-  static char *ip_str;
-  static struct netconn *conn;
-  if(!NetworkLoaded)  /* Network isn't loaded yet. */
+  if (p != NULL)
    {
-    if(gnetif.ip_addr.addr != 0)
+    /* Process your data here (p->payload) */
+    TestData_s TestData;
+    uint8_t *TestPattern = NULL;
+    TestResult_s TestResult = {0};
+    ssize_t Len;
+    uint8_t *Pack;
+
+    DecodeReqData(p->payload, p->len, &TestData, &TestPattern);
+    BurnData(TestData, TestPattern, &TestResult);
+    FreeTestPattern(&TestPattern);
+
+    Len = EncodeRespData(&TestResult, &Pack);
+
+
+    /* Sending a reply. */
+    struct pbuf *p_reply = pbuf_alloc(PBUF_TRANSPORT, Len, PBUF_RAM);
+    if (p_reply != NULL)
      {
-      remote_ip = netif_ip4_addr(netif);
-      ip_str = ip4addr_ntoa(remote_ip);
-      printf("IP Address Assigned: %s\n", ip_str);
-//      conn = netconn_new(NETCONN_UDP);
-//      if(conn != NULL)
-//       {
-//        error = netconn_bind(conn, NULL, DESTIN_PORT);
-//        if(error == ERR_OK)
-//         {
-//          NetworkLoaded = true;
-//         }
-//       }
+      memcpy(p_reply->payload, Pack, Len);
+      udp_sendto(pcb, p_reply, addr, port); // Send to sender's IP/Port
+      pbuf_free(p_reply);
+      FreeRespData(&Pack);
+     }
+
+    /* Freeing received pbuf p. */
+    pbuf_free(p);
+   }
+ }
 
 
-
+void InitNetwork(void)
+ {
+  upcb = udp_new();
+  if (upcb != NULL)
+   {
+    err_t err = udp_bind(upcb, IP_ADDR_ANY, DESTIN_PORT);
+    if (err == ERR_OK)
+     {
+      udp_recv(upcb, UDPReceiveCB, NULL);
+     }
+    else
+     {
+      udp_remove(upcb);
      }
    }
-  else  /* Network is Loaded */
-   {
-
-   }
-
  }
+
+
+
+
+
+
 
 

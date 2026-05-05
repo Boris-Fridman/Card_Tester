@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/testcard",
-            "args": ["yqw","n10"],  // "args": ["atu","n10"],
+            "args": ["uaist","n1"],  // "args": ["atu","n10"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

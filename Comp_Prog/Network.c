@@ -113,7 +113,7 @@ int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
   if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) 
    {
     if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
-    perror("Error setting timeout");
+    fprintf(stderr, "Error setting timeout\n\r");
     if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
    }
 
@@ -129,12 +129,18 @@ int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
       memcpy(ResultData, buffer, sizeof(TestResult_s));
       return 0;
      }
+    else
+     {
+      if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
+      fprintf(stderr, "The Response is Corrupted\n\r");
+      if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
+      return -1;
+     }
    }
   else
    {
     if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
-    //printf("%sNo Response.%s\n\r", TermRed, TermColorsReset);
-    perror("Problem in receiving data");
+    fprintf(stderr, "Problem in receiving data\n\r");
     if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
     return -1;
    }
