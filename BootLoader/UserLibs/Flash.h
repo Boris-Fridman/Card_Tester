@@ -16,6 +16,6 @@
 
 /*======================================================================================================================*/
 
-void BurnData(TestData_s TestData, uint8_t TestPattern[], TestResult_s *TestResult);
+void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnResult);
 
 #endif /* FLASH_H_ */

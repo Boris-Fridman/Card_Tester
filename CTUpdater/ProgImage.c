@@ -58,6 +58,7 @@ int SendImageToNetwork()
   if(FileIsOpen)
    {
     NetPacket.Periph_B_F.OTA_UPDATE_bf = 1;
+    NetPacket.Num_Interations = OTA_DATA;
     while( (NumReadBytes = read(fd, CodeSegment, sizeof(CodeSegment)) ) > 0)
      {
       NetPacket.Bit_Pattern_Length = NumReadBytes;

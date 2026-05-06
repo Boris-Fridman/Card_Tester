@@ -119,12 +119,12 @@ typedef struct PeriphBitField_s
 
  typedef struct __attribute__((packed)) TestData_s /* The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending. */
  {
-  uint32_t Test_ID;
+  uint32_t Test_ID;               /* In case of OTA Update is used as start address in flash of code segment. */
   uint32_t TestTime;
   int32_t TestVoltage;
   PeriphBitField_s Periph_B_F;
-  uint8_t Num_Interations;
-  uint8_t Bit_Pattern_Length;
+  uint8_t Num_Interations;        /* In case of OTA Update is used as Command Type.  */
+  uint8_t Bit_Pattern_Length;     /* In case of OTA Update is used as code segment length. */
  }TestData_s;
 
 
@@ -244,6 +244,14 @@ void FreeRespData(uint8_t **RespData);
 #define START_FLASH_ADDRESS   0x08000000
 #define START_PROG_OFFSET     0x18000  // 0x00000    0x08000 0x10000 0x18000   0x20000  0x40000   0x80000   0xC0000
 #define START_PROG_ADDRESS    (START_FLASH_ADDRESS + START_PROG_OFFSET)
+
+typedef enum CommandTypes_e
+ {
+  OTA_START = 0x01,
+  OTA_DATA  = 0x02,
+  OTA_END   = 0x03
+ }
+CommandTypes_e;
 
 #endif  //  ____CommonData_h__
 

@@ -51,6 +51,12 @@
 
 /* USER CODE BEGIN PV */
 
+extern uint32_t _sidata;
+extern uint32_t _sdata;
+extern uint32_t _edata;   /* End of data in RAM */
+extern uint32_t _eidata;
+extern uint32_t _flash_end_all;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -74,6 +80,9 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
   //SCB_DisableDCache();
+ uint32_t v = (uint32_t)&_sidata + (uint32_t)&_edata - (uint32_t)&_sdata;
+ uint32_t v1 = (uint32_t)&_eidata;
+ uint32_t v2 = (uint32_t)&_flash_end_all;
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
