@@ -140,6 +140,8 @@ void LoadConf()
 //  uint32_t fs = CODE_SIZE_KB;
 
   /* Declare symbols from the linker script */
+  extern uint32_t _svect;
+  extern uint32_t _evect;
   extern uint32_t _stext;   /* Start of code */
   extern uint32_t _etext;   /* End of code + rodata */
   extern uint32_t _sidata;  /* Start of data initialization in Flash */
@@ -147,17 +149,18 @@ void LoadConf()
   extern uint32_t _sdata;   /* Start of data in RAM */
   extern uint32_t _edata;   /* End of data in RAM */
 
-  
+  uint32_t sv = (uint32_t)&_svect;
+  uint32_t ev = (uint32_t)&_evect;
 //  uint32_t st = (uint32_t)&_stext;
 //  uint32_t et = (uint32_t)&_etext;
 //  uint32_t si = (uint32_t)&_sidata;
 //  uint32_t ei = (uint32_t)&_eidata;
 //  uint32_t sd = (uint32_t)&_sdata;
 //  uint32_t ed = (uint32_t)&_edata;
-
+#ifndef Debug
   MemConfig.BootLoaderConfig.StartProgAddr = &_stext;
   MemConfig.BootLoaderConfig.EndProgAddr = &_eidata;
-
+#endif
  }
 
 

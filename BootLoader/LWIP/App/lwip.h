@@ -41,7 +41,7 @@
 #endif /* WITH_RTOS */
 
 /* USER CODE BEGIN 0 */
-
+ void MX_LWIP_DeInit();
 /* USER CODE END 0 */
 
 /* Global Variables ----------------------------------------------------------*/

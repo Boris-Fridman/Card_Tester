@@ -51,7 +51,20 @@ ip4_addr_t netmask;
 ip4_addr_t gw;
 
 /* USER CODE BEGIN 2 */
+void MX_LWIP_DeInit()
+ {
+  /* Stop DHCP negotiation for a network interface (IPv4) */
+  dhcp_stop(&gnetif);
 
+  /* Remove the link callback function. */
+  netif_set_link_callback(&gnetif, NULL);
+
+  /* Unbringing the network interface... */
+  netif_set_down(&gnetif);
+
+  /* remove the network interface (IPv4/IPv6) without RTOS */
+  netif_remove(&gnetif);
+ }
 /* USER CODE END 2 */
 
 /**

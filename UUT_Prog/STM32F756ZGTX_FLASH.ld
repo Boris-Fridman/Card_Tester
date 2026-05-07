@@ -149,7 +149,7 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
 
   } >RAM AT> FLASH
-  
+
   /* Define the END of data in Flash directly */
   _eidata = _sidata + SIZEOF(.data);
    

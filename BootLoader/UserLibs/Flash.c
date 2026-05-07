@@ -34,7 +34,10 @@ uint32_t SectStartAddress(uint8_t SectNo);
 /*======================================================================================================================*/
 
 extern uint32_t _eidata;   /* End of data in RAM */
-uint32_t LastProgAddress = (uint32_t)&_eidata;
+static uint32_t LastProgAddress = (uint32_t)&_eidata;
+static volatile bool BurnEnded = false;
+/*======================================================================================================================*/
+
 void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnResult)
  {
   HAL_StatusTypeDef Result;
@@ -71,6 +74,7 @@ void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnR
      break;
     case OTA_END:
       Result = HAL_FLASH_Lock();
+      BurnEnded = true;
      break;
    }
 
@@ -168,5 +172,10 @@ inline uint32_t SectStartAddress(uint8_t SectNo)
   return Sectors[SectNo].Start;
  }
 
+
+bool TheBurnIsFinished()
+ {
+  return BurnEnded;
+ }
 
 

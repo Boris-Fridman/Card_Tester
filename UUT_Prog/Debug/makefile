@@ -77,8 +77,8 @@ all: main-build
 main-build: UUT_Prog.elf secondary-outputs
 
 # Tool invocations
-UUT_Prog.elf UUT_Prog.map: $(OBJS) $(USER_OBJS) /home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/UUT_Prog/STM32F756ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "UUT_Prog.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/UUT_Prog/STM32F756ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UUT_Prog.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+UUT_Prog.elf UUT_Prog.map: $(OBJS) $(USER_OBJS) /home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/UUT_Prog/STM32F756ZGTX_FLASH_Debug.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "UUT_Prog.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/UUT_Prog/STM32F756ZGTX_FLASH_Debug.ld" --specs=nosys.specs -Wl,-Map="UUT_Prog.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -26,7 +26,7 @@
  *
  */
 void InitNetwork(void);
-
+void DeinitNetwork(void);
 
 
 #endif /* NETWORK_H_ */

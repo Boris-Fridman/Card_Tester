@@ -23,7 +23,7 @@
 
 /*======================================================================================================================*/
 
-static struct udp_pcb *upcb;
+static volatile struct udp_pcb *upcb;
 
 /*======================================================================================================================*/
 
@@ -74,13 +74,22 @@ void InitNetwork(void)
      {
       udp_recv(upcb, UDPReceiveCB, NULL);
      }
-    else
-     {
-      udp_remove(upcb);
-     }
+//    else
+//     {
+//      udp_remove(upcb);
+//     }
    }
  }
 
+void DeinitNetwork(void)
+ {
+  if(upcb != NULL)
+   {
+    udp_recv(upcb, NULL, NULL);
+    udp_remove(upcb);
+    upcb = NULL;
+   }
+ }
 
 
 

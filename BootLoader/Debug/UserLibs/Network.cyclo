@@ -1,2 +1,3 @@
 ../UserLibs/Network.c:33:6:UDPReceiveCB	3
 ../UserLibs/Network.c:67:6:InitNetwork	3
+../UserLibs/Network.c:84:6:DeinitNetwork	2

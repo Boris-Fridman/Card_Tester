@@ -64,6 +64,7 @@ SECTIONS
   .text :
   {
     . = ALIGN(4);
+    _stext = .;
     *(.text)           /* .text sections (code) */
     *(.text*)          /* .text* sections (code) */
     *(.glue_7)         /* glue arm to thumb code */
@@ -149,6 +150,9 @@ SECTIONS
 
   } >RAM
 
+  /* Define the END of data in Flash directly */
+  _eidata = _sidata + SIZEOF(.data);
+   
   /* Uninitialized data section into "RAM" Ram type memory */
   . = ALIGN(4);
   .bss :

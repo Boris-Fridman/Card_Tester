@@ -28,12 +28,15 @@
 #include "CommonData.h"
 #include "SystemLib.h"
 #include "Network.h"
+#include "Flash.h"
 #include "netif.h"
 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
+typedef void(*pFunc)(void);
 
 /* USER CODE END PTD */
 
@@ -51,19 +54,13 @@
 
 /* USER CODE BEGIN PV */
 
-extern uint32_t _sidata;
-extern uint32_t _sdata;
-extern uint32_t _edata;   /* End of data in RAM */
-extern uint32_t _eidata;
-extern uint32_t _flash_end_all;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MPU_Config(void);
 /* USER CODE BEGIN PFP */
-
+void StartApplication();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -79,10 +76,16 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+
   //SCB_DisableDCache();
- uint32_t v = (uint32_t)&_sidata + (uint32_t)&_edata - (uint32_t)&_sdata;
- uint32_t v1 = (uint32_t)&_eidata;
- uint32_t v2 = (uint32_t)&_flash_end_all;
+
+  ResetReason_e ResetReason;
+  ResetReason = CheckResetReason();
+  if(ResetReason != E_SOFTWARE_RESET)
+   {
+    StartApplication();
+   }
+
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -126,8 +129,21 @@ int main(void)
   {
 	MX_LWIP_Process();
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
+    if(TheBurnIsFinished())
+     {
+      DeinitNetwork();
+      HAL_CRC_DeInit(&hcrc);
+      MX_LWIP_DeInit();
+      HAL_UART_DeInit(&huart3);
+
+      HAL_DeInit();
+      HAL_MPU_Disable();
+
+
+      StartApplication();
+     }
+
   }
   /* USER CODE END 3 */
 }
@@ -189,6 +205,15 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void StartApplication()
+ {
+  uint32_t JumpAddress;
+  pFunc Jump_To_Application;
+  JumpAddress = *(uint32_t*)(START_PROG_ADDRESS +4);
+  Jump_To_Application = (pFunc) JumpAddress;
+  Jump_To_Application();
+ }
 
 /* USER CODE END 4 */
 

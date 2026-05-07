@@ -18,4 +18,6 @@
 
 void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnResult);
 
+bool TheBurnIsFinished();
+
 #endif /* FLASH_H_ */

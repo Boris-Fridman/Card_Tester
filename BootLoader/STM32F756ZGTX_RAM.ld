@@ -45,7 +45,7 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 MEMORY
 {
   RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 320K
-  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 1024K
+  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 128K
 }
 
 /* Sections */
@@ -148,6 +148,10 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
 
   } >RAM
+
+  /* Define the END of data in Flash directly */
+  _eidata = _sidata + SIZEOF(.data);
+  _flash_end_all = LOADADDR(.data) + SIZEOF(.data);   
 
   /* Uninitialized data section into "RAM" Ram type memory */
   . = ALIGN(4);
