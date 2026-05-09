@@ -50,23 +50,41 @@ int InitImage(char ImgFilePathName[])
 
 int SendImageToNetwork()
  {
-  char CodeSegment[MAX_TEST_PATTERN_SIZE];
+  uint8_t CodeSegment[MAX_TEST_PATTERN_SIZE];
   ssize_t NumReadBytes;
   TestData_s NetPacket = {0};
   TestResult_s Result;
   uint32_t StartSegAddr = 0;
   if(FileIsOpen)
    {
+    printf("Sending Image to the network");
     NetPacket.Periph_B_F.OTA_UPDATE_bf = 1;
+
+    NetPacket.Num_Interations = OTA_START;
+    NetPacket.Bit_Pattern_Length = 0;
+    NetPacket.Test_ID = 0;  
+
+    printf("Sending Start Command...\n\r");
+    SendCommandToNetwork(&NetPacket, CodeSegment);
+    WaitForResponse(&Result, 0);
+    
+    printf("Sending Data...\n\r");
     NetPacket.Num_Interations = OTA_DATA;
     while( (NumReadBytes = read(fd, CodeSegment, sizeof(CodeSegment)) ) > 0)
      {
       NetPacket.Bit_Pattern_Length = NumReadBytes;
       NetPacket.Test_ID = START_PROG_ADDRESS + StartSegAddr;  
       SendCommandToNetwork(&NetPacket, CodeSegment);
-      WaitForResponse(&Result, 0);  // In the future will be uncommented.
+      WaitForResponse(&Result, 0);
       StartSegAddr += NumReadBytes;
      }
+    printf("Sending Finish Command...\n\r");
+    NetPacket.Num_Interations = OTA_END;
+    NetPacket.Bit_Pattern_Length = 0;
+    NetPacket.Test_ID = 0;  
+    SendCommandToNetwork(&NetPacket, CodeSegment);
+    WaitForResponse(&Result, 0);
+    printf("The data was sent...\n\r");
    }
   return 0;
  }

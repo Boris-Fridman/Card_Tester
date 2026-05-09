@@ -66,4 +66,24 @@ void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 2 */
 
+
+
+/*
+ * This function is written for checking requirement to start bootloader instead of jumping to application.
+ * Because this function must run before any hardware initialization it initializes the pin of button itself.
+ *
+ */
+#define PB_PIN GPIO_PIN_13
+#define PB_PORT GPIOC
+bool GetPBState()
+ {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  GPIO_InitStruct.Pin = PB_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(PB_PORT, &GPIO_InitStruct);
+  return (bool)HAL_GPIO_ReadPin(PB_PORT, PB_PIN);
+ }
 /* USER CODE END 2 */

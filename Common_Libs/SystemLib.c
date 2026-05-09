@@ -94,7 +94,11 @@ void AdjustIntVectTable()  /* Adjusts Interrupt Vector Table MCU pointer accordi
   extern void __Vectors;
   SCB->VTOR = (uint32_t)&__Vectors;  // In case of Keil compiler  -- Not tested yet.
 #endif
+
+  __set_MSP(*(__IO uint32_t*)SCB->VTOR);
+
   __enable_irq();
+
  }
 
 /*======================================================================================================================*/

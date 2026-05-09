@@ -396,6 +396,13 @@ void PrintProgInt()
   printf("\033[2J\033[H");  //ansi clear screen.
   printf(TermMagenta);
   printf("Card Tester is started ...\n\r");
+#ifdef DEBUG
+  printf(TermYello);
+  printf("Debug Mode\n\r");
+#else
+  printf(TermGreen);
+  printf("Release Mode\n\r");
+#endif
   printf(TermColorsReset);  //ansi reset colors in screen.
  }
 

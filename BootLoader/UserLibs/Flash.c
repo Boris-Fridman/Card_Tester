@@ -43,7 +43,8 @@ void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnR
   HAL_StatusTypeDef Result;
   uint8_t LastProgSector;
   uint8_t SectorForErasing;
-
+  FLASH_EraseInitTypeDef pEraseInit = {0};
+  uint32_t SectorError = 0;
 
   memset(BurnResult, 0, sizeof(TestResult_s));
 
@@ -60,10 +61,33 @@ void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnR
         SectorForErasing = SectorToErase(CodeSegInfo.Test_ID, CodeSegInfo.Bit_Pattern_Length);
         if((SectorForErasing != 0xFF) && (SectorForErasing > LastProgSector))
          {
-          FLASH_Erase_Sector(SectStartAddress(SectorForErasing), FLASH_VOLTAGE_RANGE_4);
+          Result = 0;
+          //  --  FLASH_Erase_Sector(SectStartAddress(SectorForErasing), FLASH_VOLTAGE_RANGE_4);
+          //FLASH_Erase_Sector(SectorForErasing, FLASH_VOLTAGE_RANGE_4);
+          pEraseInit.NbSectors = 1;
+          pEraseInit.Sector = (FLASH_SECTOR_0 + SectorForErasing);
+          pEraseInit.TypeErase = FLASH_TYPEERASE_SECTORS;
+          pEraseInit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+//          SCB_CleanDCache();
+//          SCB_DisableDCache();
+//          SCB_DisableICache();
+//          __HAL_FLASH_ART_DISABLE(); // Disable ART Accelerator
+//          uint32_t primask_bit = __get_PRIMASK();
+          //__disable_irq();
+          //__HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR);
+          Result = HAL_FLASHEx_Erase(&pEraseInit, &SectorError);
+          //__enable_irq();
+//          __set_PRIMASK(primask_bit);
+//          __HAL_FLASH_ART_ENABLE();
+//          SCB_EnableICache();
+//          SCB_EnableDCache();
          }
         if(CodeSegInfo.Test_ID > LastProgAddress)
-         Result = ProgSegment(CodeSegInfo.Test_ID, CodeSegment, CodeSegInfo.Bit_Pattern_Length);
+         {
+          //Result = 0;
+          Result = ProgSegment(CodeSegInfo.Test_ID, CodeSegment, CodeSegInfo.Bit_Pattern_Length);
+         }
+
         else
          Result = HAL_ERROR;
        }
@@ -91,18 +115,20 @@ HAL_StatusTypeDef ProgSegment(uint32_t StartAddress, uint8_t Segment[], uint8_t 
   uint8_t i;
   uint8_t StartPart;
   uint8_t NumParts;
-  const uint8_t PART_SIZE = sizeof(uint64_t);
+  const uint8_t PART_SIZE = sizeof(uint32_t);
   const uint8_t TOTAL_NUM_PARTS = MAX_TEST_PATTERN_SIZE / PART_SIZE;
 
-  uint64_t BlockParts[TOTAL_NUM_PARTS];
+  uint32_t BlockParts[TOTAL_NUM_PARTS];
   memset(&BlockParts, 0xFF, sizeof(BlockParts));
   memcpy(&BlockParts, Segment, Length);
   NumParts = DIV_RND_UP(Length, PART_SIZE);
 
   for(i = 0; i < NumParts; i++)
    {
+    Result = 0;
     StartPart = i * PART_SIZE;
-    Result = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, StartAddress + StartPart, Segment[i]);
+    //Result = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, StartAddress + StartPart, i);  // For test only.
+    Result = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, StartAddress + StartPart, BlockParts[i]);
    }
   return Result;
  }

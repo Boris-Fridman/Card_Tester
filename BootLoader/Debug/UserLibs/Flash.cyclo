@@ -1,7 +1,7 @@
 ../UserLibs/Flash.c:41:6:BurnData	10
-../UserLibs/Flash.c:88:19:ProgSegment	2
-../UserLibs/Flash.c:134:6:ResetErasedSectorsStatuses	2
-../UserLibs/Flash.c:141:9:SectorToErase	7
-../UserLibs/Flash.c:157:9:GetSectorNo	4
-../UserLibs/Flash.c:170:17:SectStartAddress	1
-../UserLibs/Flash.c:176:6:TheBurnIsFinished	1
+../UserLibs/Flash.c:112:19:ProgSegment	2
+../UserLibs/Flash.c:160:6:ResetErasedSectorsStatuses	2
+../UserLibs/Flash.c:167:9:SectorToErase	7
+../UserLibs/Flash.c:183:9:GetSectorNo	4
+../UserLibs/Flash.c:196:17:SectStartAddress	1
+../UserLibs/Flash.c:202:6:TheBurnIsFinished	1

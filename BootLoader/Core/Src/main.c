@@ -77,11 +77,37 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
+
+//	  FLASH_EraseInitTypeDef pEraseInit = {0};
+//	  uint32_t SectorError = 0;
+//	  HAL_StatusTypeDef Result;
+//
+//	  pEraseInit.NbSectors = 3;
+//	  pEraseInit.Sector = (FLASH_SECTOR_4);
+//	  pEraseInit.TypeErase = FLASH_TYPEERASE_SECTORS;
+//	  pEraseInit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+//	  Result = HAL_FLASH_Unlock();
+//	  HAL_FLASHEx_Erase(&pEraseInit, &SectorError);
+//
+//      __disable_irq();
+//
+//	  uint32_t i;
+//	  for(i = 0; i < 10; i++)
+//		  Result = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, START_PROG_ADDRESS + i*4, 0);
+//      __enable_irq();
+//
+//	  Result = HAL_FLASH_Lock();
+
+
+
+
+
   //SCB_DisableDCache();
 
   ResetReason_e ResetReason;
   ResetReason = CheckResetReason();
-  if(ResetReason != E_SOFTWARE_RESET)
+  //if(ResetReason != E_NRST_PIN_RESET)  // Is written temperary. Later will be removed.
+  if((ResetReason != E_SOFTWARE_RESET) && (!GetPBState()))
    {
     StartApplication();
    }
@@ -93,10 +119,29 @@ int main(void)
 
   /* MCU Configuration--------------------------------------------------------*/
 
+
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+
+
+//  HAL_DeInit();
+//  SysTick->CTRL = 0;
+//  SysTick->LOAD = 0;
+//  SysTick->VAL = 0;
+//  __disable_irq();
+//  for (int i = 0; i < 8; i++)
+//   {
+//    NVIC->ICER[i] = 0xFFFFFFFF; // Disable all interrupts
+//    NVIC->ICPR[i] = 0xFFFFFFFF; // Clear all pending interrupts
+//   }
+//  SCB_DisableICache();
+//  SCB_DisableDCache();
+//  __DSB();
+//  __ISB();
+//  StartApplication();
+
 
   /* USER CODE END Init */
 
@@ -114,13 +159,7 @@ int main(void)
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 
-//  printf("\033[2J\033[H");  //ansi clear screen.
-//  printf(TermMagenta);
-//  printf("Card Tester BootLoader is started ...\n\r");
-//  printf(TermColorsReset);  //ansi reset colors in screen.
-
   InitNetwork();
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -132,14 +171,20 @@ int main(void)
     /* USER CODE BEGIN 3 */
     if(TheBurnIsFinished())
      {
+      printf("Finished downloading. Starting main application...\n\r");
       DeinitNetwork();
       HAL_CRC_DeInit(&hcrc);
       MX_LWIP_DeInit();
       HAL_UART_DeInit(&huart3);
 
-      HAL_DeInit();
-      HAL_MPU_Disable();
+      __disable_irq();
 
+      HAL_DeInit();
+      SysTick->CTRL = 0;
+      SysTick->VAL = 0;
+      SysTick->LOAD = 0;
+      HAL_RCC_DeInit();
+      HAL_MPU_Disable();
 
       StartApplication();
      }

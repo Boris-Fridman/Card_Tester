@@ -29,7 +29,7 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "stdbool.h"
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */
@@ -39,7 +39,17 @@ extern "C" {
 void MX_GPIO_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+/**
+ * @brief This function is written for checking requirement to start bootloader instead of jumping to application.
+ * @code
+ * bool GetPBState();
+ * @code
+ *
+ * @return "true" if button is pressed or "false" if released.
+ *
+ */
 
+bool GetPBState(void);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
