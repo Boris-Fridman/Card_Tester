@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 /*======================================================================================================================*/
-#define DEV_REBOOT_TIME   20  /* The reboot time of the device for waiting. */
+#define DEV_REBOOT_TIME   10  /* The reboot time of the device for waiting. */
 /*======================================================================================================================*/
 static struct sockaddr_in dest_addr;
 static int sockfd;

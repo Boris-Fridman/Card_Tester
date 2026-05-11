@@ -61,30 +61,14 @@ void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnR
         SectorForErasing = SectorToErase(CodeSegInfo.Test_ID, CodeSegInfo.Bit_Pattern_Length);
         if((SectorForErasing != 0xFF) && (SectorForErasing > LastProgSector))
          {
-          Result = 0;
-          //  --  FLASH_Erase_Sector(SectStartAddress(SectorForErasing), FLASH_VOLTAGE_RANGE_4);
-          //FLASH_Erase_Sector(SectorForErasing, FLASH_VOLTAGE_RANGE_4);
           pEraseInit.NbSectors = 1;
           pEraseInit.Sector = (FLASH_SECTOR_0 + SectorForErasing);
           pEraseInit.TypeErase = FLASH_TYPEERASE_SECTORS;
           pEraseInit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
-//          SCB_CleanDCache();
-//          SCB_DisableDCache();
-//          SCB_DisableICache();
-//          __HAL_FLASH_ART_DISABLE(); // Disable ART Accelerator
-//          uint32_t primask_bit = __get_PRIMASK();
-          //__disable_irq();
-          //__HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR);
           Result = HAL_FLASHEx_Erase(&pEraseInit, &SectorError);
-          //__enable_irq();
-//          __set_PRIMASK(primask_bit);
-//          __HAL_FLASH_ART_ENABLE();
-//          SCB_EnableICache();
-//          SCB_EnableDCache();
          }
         if(CodeSegInfo.Test_ID > LastProgAddress)
          {
-          //Result = 0;
           Result = ProgSegment(CodeSegInfo.Test_ID, CodeSegment, CodeSegInfo.Bit_Pattern_Length);
          }
 
@@ -127,7 +111,6 @@ HAL_StatusTypeDef ProgSegment(uint32_t StartAddress, uint8_t Segment[], uint8_t 
    {
     Result = 0;
     StartPart = i * PART_SIZE;
-    //Result = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, StartAddress + StartPart, i);  // For test only.
     Result = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, StartAddress + StartPart, BlockParts[i]);
    }
   return Result;

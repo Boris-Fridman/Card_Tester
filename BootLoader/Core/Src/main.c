@@ -42,6 +42,11 @@ typedef void(*pFunc)(void);
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define MAGIC_NUMBER  0x55AA55AA5A5A5A5A
+
+#define MAGIC_NUMBER_ADDR    (0x2004FFF0)
+#define BOOTLOADER_MAGIC_KEY 0xDEADBEEF
+
 
 /* USER CODE END PD */
 
@@ -53,7 +58,7 @@ typedef void(*pFunc)(void);
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+__attribute__((section(".noinit"))) volatile uint64_t MagicNumberVar;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -66,6 +71,23 @@ void StartApplication();
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+
+
+//
+// // Function to write the magic number
+//void SetMagicNumber(uint32_t magic) {
+//    // Cast the address to a volatile pointer and write the value
+//    *(__IO uint32_t*)MAGIC_NUMBER_ADDR = magic;
+//}
+//
+// // Function to read the magic number
+//uint32_t GetMagicNumber(void) {
+//    return *(__IO uint32_t*)MAGIC_NUMBER_ADDR;
+//}
+//
+
+
+
 /* USER CODE END 0 */
 
 /**
@@ -77,38 +99,12 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
-
-//	  FLASH_EraseInitTypeDef pEraseInit = {0};
-//	  uint32_t SectorError = 0;
-//	  HAL_StatusTypeDef Result;
-//
-//	  pEraseInit.NbSectors = 3;
-//	  pEraseInit.Sector = (FLASH_SECTOR_4);
-//	  pEraseInit.TypeErase = FLASH_TYPEERASE_SECTORS;
-//	  pEraseInit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
-//	  Result = HAL_FLASH_Unlock();
-//	  HAL_FLASHEx_Erase(&pEraseInit, &SectorError);
-//
-//      __disable_irq();
-//
-//	  uint32_t i;
-//	  for(i = 0; i < 10; i++)
-//		  Result = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, START_PROG_ADDRESS + i*4, 0);
-//      __enable_irq();
-//
-//	  Result = HAL_FLASH_Lock();
-
-
-
-
-
-  //SCB_DisableDCache();
-
   ResetReason_e ResetReason;
   ResetReason = CheckResetReason();
   //if(ResetReason != E_NRST_PIN_RESET)  // Is written temperary. Later will be removed.
-  if((ResetReason != E_SOFTWARE_RESET) && (!GetPBState()))
+  if( ((ResetReason != E_SOFTWARE_RESET) && (!GetPBState())) || ((ResetReason == E_SOFTWARE_RESET) && (MagicNumberVar == MAGIC_NUMBER)))
    {
+	MagicNumberVar = 0;
     StartApplication();
    }
 
@@ -124,24 +120,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
-
-//  HAL_DeInit();
-//  SysTick->CTRL = 0;
-//  SysTick->LOAD = 0;
-//  SysTick->VAL = 0;
-//  __disable_irq();
-//  for (int i = 0; i < 8; i++)
-//   {
-//    NVIC->ICER[i] = 0xFFFFFFFF; // Disable all interrupts
-//    NVIC->ICPR[i] = 0xFFFFFFFF; // Clear all pending interrupts
-//   }
-//  SCB_DisableICache();
-//  SCB_DisableDCache();
-//  __DSB();
-//  __ISB();
-//  StartApplication();
-
 
   /* USER CODE END Init */
 
@@ -172,21 +150,23 @@ int main(void)
     if(TheBurnIsFinished())
      {
       printf("Finished downloading. Starting main application...\n\r");
-      DeinitNetwork();
-      HAL_CRC_DeInit(&hcrc);
-      MX_LWIP_DeInit();
-      HAL_UART_DeInit(&huart3);
-
-      __disable_irq();
-
-      HAL_DeInit();
-      SysTick->CTRL = 0;
-      SysTick->VAL = 0;
-      SysTick->LOAD = 0;
-      HAL_RCC_DeInit();
-      HAL_MPU_Disable();
-
-      StartApplication();
+      MagicNumberVar = MAGIC_NUMBER;
+      NVIC_SystemReset();  // Soft Reset
+//      DeinitNetwork();
+//      HAL_CRC_DeInit(&hcrc);
+//      MX_LWIP_DeInit();
+//      HAL_UART_DeInit(&huart3);
+//
+//      __disable_irq();
+//
+//      HAL_DeInit();
+//      SysTick->CTRL = 0;
+//      SysTick->VAL = 0;
+//      SysTick->LOAD = 0;
+//      HAL_RCC_DeInit();
+//      HAL_MPU_Disable();
+//
+//      StartApplication();
      }
 
   }
