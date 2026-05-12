@@ -9,8 +9,11 @@
 #include "SystemLib.h"
 #include "main.h"
 
+#include "stm32f7xx_hal_flash.h"
+
 #include "usart.h"
 #include <stdarg.h>
+#include <string.h>
 
 #include "CommonData.h"
 
@@ -23,6 +26,23 @@
 #include "FreeRTOSConfig.h"
 #include "projdefs.h"
 #endif
+
+
+
+
+/*======================================================================================================================*/
+
+SectorAddr_s const SectorsAddr[FLASH_SECTOR_TOTAL] =
+  {
+    {0x08000000 , 0x08007FFF},
+    {0x08008000 , 0x0800FFFF},
+    {0x08010000 , 0x08017FFF},
+    {0x08018000 , 0x0801FFFF},
+    {0x08020000 , 0x0803FFFF},
+    {0x08040000 , 0x0807FFFF},
+    {0x08080000 , 0x080BFFFF},
+    {0x080C0000 , 0x080FFFFF}
+  };
 
 /*======================================================================================================================*/
 #ifdef USE_FREERTOS
@@ -95,7 +115,7 @@ void AdjustIntVectTable()  /* Adjusts Interrupt Vector Table MCU pointer accordi
   SCB->VTOR = (uint32_t)&__Vectors;  // In case of Keil compiler  -- Not tested yet.
 #endif
 
-  __set_MSP(*(__IO uint32_t*)SCB->VTOR);
+  //__set_MSP(*(__IO uint32_t*)SCB->VTOR);
 
   __enable_irq();
 
@@ -118,19 +138,8 @@ ResetReason_e CheckResetReason()
  }
 
 
+/*======================================================================================================================*/
 
-typedef struct BL_Conf_s
- {
-  void *StartProgAddr;
-  void *EndProgAddr;
-  uint32_t ProgCRC;
- }BL_Conf_s;
-
-typedef struct MemConf_s
- {
-  BL_Conf_s BootLoaderConfig;
-  uint32_t ConfCRC;
- }MemConf_s;
 
 
 #define CODE_SIZE_KB (*((uint16_t*)FLASHSIZE_BASE))
@@ -144,17 +153,17 @@ void LoadConf()
 //  uint32_t fs = CODE_SIZE_KB;
 
   /* Declare symbols from the linker script */
-  extern uint32_t _svect;
-  extern uint32_t _evect;
-  extern uint32_t _stext;   /* Start of code */
-  extern uint32_t _etext;   /* End of code + rodata */
-  extern uint32_t _sidata;  /* Start of data initialization in Flash */
-  extern uint32_t _eidata;  /* End of data initialization in Flash */
-  extern uint32_t _sdata;   /* Start of data in RAM */
-  extern uint32_t _edata;   /* End of data in RAM */
+//  extern uint32_t _svect;
+//  extern uint32_t _evect;
+//  extern uint32_t _stext;   /* Start of code */
+//  extern uint32_t _etext;   /* End of code + rodata */
+//  extern uint32_t _sidata;  /* Start of data initialization in Flash */
+//  extern uint32_t _eidata;  /* End of data initialization in Flash */
+//  extern uint32_t _sdata;   /* Start of data in RAM */
+//  extern uint32_t _edata;   /* End of data in RAM */
 
-  uint32_t sv = (uint32_t)&_svect;
-  uint32_t ev = (uint32_t)&_evect;
+//  uint32_t sv = (uint32_t)&_svect;
+//  uint32_t ev = (uint32_t)&_evect;
 //  uint32_t st = (uint32_t)&_stext;
 //  uint32_t et = (uint32_t)&_etext;
 //  uint32_t si = (uint32_t)&_sidata;
@@ -162,10 +171,88 @@ void LoadConf()
 //  uint32_t sd = (uint32_t)&_sdata;
 //  uint32_t ed = (uint32_t)&_edata;
 #ifndef Debug
-  MemConfig.BootLoaderConfig.StartProgAddr = &_stext;
-  MemConfig.BootLoaderConfig.EndProgAddr = &_eidata;
+//  MemConfig.BootLoaderConfig.StartProgAddr = &_stext;
+//  MemConfig.BootLoaderConfig.EndProgAddr = &_eidata;
 #endif
+
+  MemConfig = *(MemConf_s *)(SectorsAddr[FLASH_CONFIG_SECTOR].Start);
+ }
+
+void SaveConf()
+ {
+  uint32_t NumBlocks, i;
+  uint32_t SectorError = 0;
+  FLASH_EraseInitTypeDef pEraseInit = {0};
+  const uint32_t FirstConfAddress = SectorsAddr[FLASH_CONFIG_SECTOR].Start;
+  const uint32_t LastConfAddress = SectorsAddr[FLASH_CONFIG_SECTOR].End;
+  const uint8_t BlockSize = sizeof(uint32_t);
+  HAL_StatusTypeDef Result;
+  uint32_t *DataToWrite = NULL;
+  uint32_t ConfDataSize = sizeof(MemConf_s);
+  printf(TermYello);
+
+  printf("Saving Configuration..\n\r");
+
+  if((MemConfig.DataLen >= (LastConfAddress - FirstConfAddress))||(MemConfig.DataLen < ConfDataSize)) /* Means that the length of the data is invalid. */
+   {
+    MemConfig.DataLen = ConfDataSize;
+   }
+
+  printf("The start address: 0x%08lX\n\rThe last Address is: 0x%08lX\n\r", FirstConfAddress, LastConfAddress);
+  printf("The size is: %ld\n\r", MemConfig.DataLen);
+
+  NumBlocks = DIV_RND_UP(MemConfig.DataLen, BlockSize);
+  DataToWrite = calloc(NumBlocks, BlockSize);  /* The "callock()" is required to ensure that the address can be divided by 4 without reminded parts. */
+  if(DataToWrite != NULL)
+   {
+	printf("Memory was allocated successfully. The start address is: 0x%08lX\n\r", (uint32_t)DataToWrite);
+    memset(DataToWrite, 0xFF, MemConfig.DataLen);
+    memcpy(DataToWrite, (void*)FirstConfAddress, MemConfig.DataLen);
+    *(MemConf_s *)DataToWrite = MemConfig;
+
+    Result = HAL_FLASH_Unlock();
+    if(Result == HAL_OK)
+     {
+      printf("The flash was unlocked.\n\r");
+      pEraseInit.NbSectors = 1;
+      pEraseInit.Sector = (FLASH_CONFIG_SECTOR);
+      pEraseInit.TypeErase = FLASH_TYPEERASE_SECTORS;
+      pEraseInit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+      Result = HAL_FLASHEx_Erase(&pEraseInit, &SectorError);
+      printf("The page was erased.\n\r");
+      if(Result == HAL_OK)
+       {
+        for(i = 0; i < NumBlocks; i++)
+         {
+          Result = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, FirstConfAddress + i * BlockSize, DataToWrite[i]);
+         }
+       }
+      printf("The data was written.\n\r");
+      Result = HAL_FLASH_Lock();
+      printf("The flash was locked.\n\r");
+     }
+
+    free(DataToWrite);
+    printf(TermColorsReset);
+   }
+
+
  }
 
 
+
+
+void GetBLConf(BL_Conf_s *BlConf)
+ {
+  LoadConf();
+  *BlConf = MemConfig.BootLoaderConfig;
+ }
  
+void SetBLConf(BL_Conf_s BlConf)
+ {
+  MemConfig.BootLoaderConfig = BlConf;
+  SaveConf();
+ }
+
+
+

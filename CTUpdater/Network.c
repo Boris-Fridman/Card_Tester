@@ -58,10 +58,12 @@ int InitNetwork()
        {
         for(i = 0; i < DEV_REBOOT_TIME; i++)
          {
-          printf("%ld\n\r", i);
+          printf("%ld ", i);
+          fflush(stdout);
           sleep(1);
          }
        }
+      printf("\n\r");
       printf("Retrying... \n\r");
       Result = OpenNetwork(host);
      } 

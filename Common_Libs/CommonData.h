@@ -76,7 +76,7 @@
  * Internet information for sending and receiving call-events.
  */
 #define HOST_NAME              "CardTester"               /* Server Host Name with which the DHCP Connection is recognized. */
-#define BL_HOST_NAME           "BL_of_CardTester"        /* Server Host Name for BootLoader with which the DHCP Connection is recognized. */
+#define BL_HOST_NAME           "BL_of_CardTester"         /* Server Host Name for BootLoader with which the DHCP Connection is recognized. */
 #define DESTIN_IP              "192.168.1.113"            /* Server IP address to which are sent the call messages. */
 #define DESTIN_PORT             8080                      /* Server port to which are sent the call messages. */
 #define BUFFER_SIZE             1024                      /* The length in bytes, of the buffer pointed by the buf paramter that is used by the recvfrom() function. */
@@ -244,6 +244,8 @@ void FreeRespData(uint8_t **RespData);
 #define START_FLASH_ADDRESS   0x08000000
 #define START_PROG_OFFSET     0x20000  // 0x00000    0x08000 0x10000 0x18000   0x20000  0x40000   0x80000   0xC0000
 #define START_PROG_ADDRESS    (START_FLASH_ADDRESS + START_PROG_OFFSET)
+
+
 
 typedef enum CommandTypes_e
  {

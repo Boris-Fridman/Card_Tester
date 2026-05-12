@@ -20,4 +20,6 @@ void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnR
 
 bool TheBurnIsFinished();
 
+bool ApplicationExists();
+
 #endif /* FLASH_H_ */

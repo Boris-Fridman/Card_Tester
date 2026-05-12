@@ -101,11 +101,11 @@ int main(void)
 
   ResetReason_e ResetReason;
   ResetReason = CheckResetReason();
-  //if(ResetReason != E_NRST_PIN_RESET)  // Is written temperary. Later will be removed.
   if( ((ResetReason != E_SOFTWARE_RESET) && (!GetPBState())) || ((ResetReason == E_SOFTWARE_RESET) && (MagicNumberVar == MAGIC_NUMBER)))
    {
 	MagicNumberVar = 0;
-    StartApplication();
+	if(ApplicationExists())
+     StartApplication();
    }
 
   /* USER CODE END 1 */
@@ -150,23 +150,19 @@ int main(void)
     if(TheBurnIsFinished())
      {
       printf("Finished downloading. Starting main application...\n\r");
+
+      /*
+       *  Attention !!!!
+       * The main application can be run only before the "HAL_Init()" that means before the starting the bootloader mode at all.
+       * After the running the procedure "HAL_Init()" the application running is impossible regardless anything even after "HAL_DeInit()".
+       * Due to this reason the main application running is done by making setting the magic number and than making the softreset.
+       * The reset reason is not enough to decide if to run the main program or bootloader itself because the softreset is used for
+       * making OTA-Update in case the main application received command to reboot the device for making OTA-Update.
+       * So by softupdate is is not possible to know if the reset was done for for making the OTA-Update or for running the main
+       * program after OTA-Update itself.
+       */
       MagicNumberVar = MAGIC_NUMBER;
       NVIC_SystemReset();  // Soft Reset
-//      DeinitNetwork();
-//      HAL_CRC_DeInit(&hcrc);
-//      MX_LWIP_DeInit();
-//      HAL_UART_DeInit(&huart3);
-//
-//      __disable_irq();
-//
-//      HAL_DeInit();
-//      SysTick->CTRL = 0;
-//      SysTick->VAL = 0;
-//      SysTick->LOAD = 0;
-//      HAL_RCC_DeInit();
-//      HAL_MPU_Disable();
-//
-//      StartApplication();
      }
 
   }

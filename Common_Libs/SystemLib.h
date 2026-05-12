@@ -8,6 +8,7 @@
 #ifndef ____SYSTEMLIB_H__
 #define ____SYSTEMLIB_H__
 
+#include "stdint.h"
 
 /*
  * Sectors in flash definitions:
@@ -62,7 +63,12 @@
  */
 
 
+/*======================================================================================================================*/
 
+#define FLASH_CONFIG_SECTOR  (FLASH_SECTOR_TOTAL - 1)
+#define START_PROG_SECTOR    FLASH_SECTOR_4
+
+/*======================================================================================================================*/
 
 typedef enum ResetReason_e
  {
@@ -70,13 +76,52 @@ typedef enum ResetReason_e
   E_BROWN_OUT_RESET,   /* Brown out reset (power supply undervoltage detected.) */
   E_IWATCHDOC_RESET,   /* Independent watch-dog reset (watchdog counter underrun)  */
   E_WWATCHDOC_RESET,   /* Window watch-dog reset adcwatchdog counter underrun */
-  E_SOFTWARE_RESET,    /* Sortware reset: The reset was done by the command "NVIC_SystemReset()" in the software. */
+  E_SOFTWARE_RESET,    /* Software reset: The reset was done by the command "NVIC_SystemReset()" in the software. */
   E_NRST_PIN_RESET,    /* NRTST Pin Reset: The reset was done by the hardware for example the Reset-Button connected to the NRST Pin was pressed. */
   E_LOWPOWER_RESET,    /* Low Power Reset. The reset was done when the MCU was in standby. (Rarely Usable)*/
-  E_RCC_READY,         /* The LSI Oscilator is runnint and stable. Not a reset reason. */
+  E_RCC_READY,         /* The LSI Oscillator is running and stable. Not a reset reason. */
   // ...
   E_NUM_RESET_FLAGS
  }ResetReason_e;
+
+
+ /*======================================================================================================================*/
+
+
+typedef struct SectorAddr_s
+ {
+  uint32_t Start;
+  uint32_t End;
+ }SectorAddr_s;
+
+
+ extern SectorAddr_s const SectorsAddr[];
+
+
+typedef struct BL_Conf_s
+ {
+  void *StartProgAddr;
+  void *EndProgAddr;
+  uint32_t ProgCRC;
+ }
+BL_Conf_s;
+
+
+typedef struct ProgConf_s
+ {
+  uint32_t ConfLen;
+ }
+ProgConf_s;
+
+typedef struct MemConf_s
+ {
+  uint32_t DataLen;
+  BL_Conf_s BootLoaderConfig;
+//  uint32_t ConfCRC;
+//  ProgConf_s ProgramConfig;
+ }
+MemConf_s;
+
 
 
 #ifdef USE_FREERTOS
@@ -114,6 +159,9 @@ void InitRTPrintf();
 int	rtprintf(const char *format, ...);
 #endif
 
+
+/*======================================================================================================================*/
+
 /**
  * @brief Adjusts Interrupt Vector Table MCU pointer according to code location in flash memory.
  *
@@ -123,8 +171,6 @@ int	rtprintf(const char *format, ...);
  *
  */
 void AdjustIntVectTable(void);
-
-
 
 
 /**
@@ -139,9 +185,13 @@ void AdjustIntVectTable(void);
  */
 ResetReason_e CheckResetReason();
 
-
+/*======================================================================================================================*/
 
 void LoadConf(void);
+
+void GetBLConf(BL_Conf_s *BlConf);
+void SetBLConf(BL_Conf_s BlConf);
+
 
 
 #endif /* ____SYSTEMLIB_H__ */

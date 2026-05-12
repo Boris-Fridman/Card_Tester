@@ -10,12 +10,13 @@
 
 #include "main.h"
 
+#include "crc.h"
 #include "stm32f7xx_hal_flash.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-
+#include "SystemLib.h"
 
 
 /*======================================================================================================================*/
@@ -34,17 +35,18 @@ uint32_t SectStartAddress(uint8_t SectNo);
 /*======================================================================================================================*/
 
 extern uint32_t _eidata;   /* End of data in RAM */
-static uint32_t LastProgAddress = (uint32_t)&_eidata;
+static uint32_t LastBLAddress = (uint32_t)&_eidata;
 static volatile bool BurnEnded = false;
 /*======================================================================================================================*/
 
 void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnResult)
  {
   HAL_StatusTypeDef Result;
-  uint8_t LastProgSector;
+  uint8_t LastBLSector;
   uint8_t SectorForErasing;
   FLASH_EraseInitTypeDef pEraseInit = {0};
   uint32_t SectorError = 0;
+  static BL_Conf_s BlConf;
 
   memset(BurnResult, 0, sizeof(TestResult_s));
 
@@ -53,13 +55,16 @@ void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnR
     case OTA_START:
       Result = HAL_FLASH_Unlock();
       ResetErasedSectorsStatuses();
+      BlConf.StartProgAddr = BlConf.EndProgAddr = NULL;
      break;
     case OTA_DATA:
       if(CodeSegInfo.Test_ID >= START_PROG_ADDRESS)
        {
-        LastProgSector = GetSectorNo(LastProgAddress);
+        LastBLSector = GetSectorNo(LastBLAddress);
         SectorForErasing = SectorToErase(CodeSegInfo.Test_ID, CodeSegInfo.Bit_Pattern_Length);
-        if((SectorForErasing != 0xFF) && (SectorForErasing > LastProgSector))
+        BlConf.StartProgAddr = (BlConf.StartProgAddr != NULL) ? BlConf.StartProgAddr : ((void*)CodeSegInfo.Test_ID);
+        BlConf.EndProgAddr = (void*)MAX((uint32_t)BlConf.EndProgAddr, CodeSegInfo.Test_ID + CodeSegInfo.Bit_Pattern_Length);
+        if((SectorForErasing != 0xFF) && (SectorForErasing > LastBLSector)) /* Protection against erasing flash page/sector with bootloader program. */
          {
           pEraseInit.NbSectors = 1;
           pEraseInit.Sector = (FLASH_SECTOR_0 + SectorForErasing);
@@ -67,7 +72,7 @@ void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnR
           pEraseInit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
           Result = HAL_FLASHEx_Erase(&pEraseInit, &SectorError);
          }
-        if(CodeSegInfo.Test_ID > LastProgAddress)
+        if(CodeSegInfo.Test_ID > LastBLAddress)
          {
           Result = ProgSegment(CodeSegInfo.Test_ID, CodeSegment, CodeSegInfo.Bit_Pattern_Length);
          }
@@ -82,6 +87,13 @@ void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnR
      break;
     case OTA_END:
       Result = HAL_FLASH_Lock();
+      BlConf.ProgCRC = 0;
+      printf("%sThe program is located in the 0x%08lX : 0x%08lX%s\n\r", TermYello, (uint32_t)BlConf.StartProgAddr, (uint32_t)BlConf.EndProgAddr, TermColorsReset);
+      printf("%sThe size is: 0x%08lX%s\n\r", TermYello, (uint32_t)BlConf.EndProgAddr - (uint32_t)BlConf.StartProgAddr, TermColorsReset);
+      BlConf.ProgCRC = HAL_CRC_Calculate(&hcrc, (uint32_t*)BlConf.StartProgAddr, (uint32_t)BlConf.EndProgAddr - (uint32_t)BlConf.StartProgAddr);
+      printf("%sThe CRC is: 0x%08lX%s\n\r",TermYello, BlConf.ProgCRC, TermColorsReset);
+      SetBLConf(BlConf);
+
       BurnEnded = true;
      break;
    }
@@ -118,31 +130,14 @@ HAL_StatusTypeDef ProgSegment(uint32_t StartAddress, uint8_t Segment[], uint8_t 
 
 
 
-typedef struct SectorAddr_s
- {
-  uint32_t Start;
-  uint32_t End;
- }SectorAddr_s;
 
 
-#define NUM_SECTORS 8
-SectorAddr_s const Sectors[NUM_SECTORS] =
-  {
-    {0x08000000 , 0x08007FFF},
-    {0x08008000 , 0x0800FFFF},
-    {0x08010000 , 0x08017FFF},
-    {0x08018000 , 0x0801FFFF},
-    {0x08020000 , 0x0803FFFF},
-    {0x08040000 , 0x0807FFFF},
-    {0x08080000 , 0x080BFFFF},
-    {0x080C0000 , 0x080FFFFF}
-  };
 
-bool SectorNotErased[NUM_SECTORS];
+bool SectorNotErased[FLASH_SECTOR_TOTAL];
 
 void ResetErasedSectorsStatuses()
  {
-  for(uint8_t i = 0; i < NUM_SECTORS; i++)
+  for(uint8_t i = 0; i < FLASH_SECTOR_TOTAL; i++)
    SectorNotErased[i] = true;
  }
 
@@ -151,10 +146,10 @@ uint8_t SectorToErase(uint32_t StartAddress, uint8_t Length)
  {
   uint8_t i;
   uint32_t EndAddress = StartAddress + Length;
-  for(i = 0; i < NUM_SECTORS; i++)
+  for(i = 0; i < FLASH_SECTOR_TOTAL; i++)
    {
-    if(   ( (StartAddress <= Sectors[i].Start) && (EndAddress >= Sectors[i].Start) ) ||
-        ( ( (StartAddress >= Sectors[i].Start) && (EndAddress <= Sectors[i].End) ) && SectorNotErased[i] )   )
+    if(   ( (StartAddress <= SectorsAddr[i].Start) && (EndAddress >= SectorsAddr[i].Start) ) ||
+        ( ( (StartAddress >= SectorsAddr[i].Start) && (EndAddress <= SectorsAddr[i].End) ) && SectorNotErased[i] )   )
      {
       SectorNotErased[i] = false;
       return i;
@@ -166,9 +161,9 @@ uint8_t SectorToErase(uint32_t StartAddress, uint8_t Length)
 uint8_t GetSectorNo(uint32_t Address)
  {
   uint8_t i;
-  for(i = 0; i < NUM_SECTORS; i++)
+  for(i = 0; i < FLASH_SECTOR_TOTAL; i++)
    {
-    if((Address >= Sectors[i].Start) && (Address <= Sectors[i].End))
+    if((Address >= SectorsAddr[i].Start) && (Address <= SectorsAddr[i].End))
      return i;
    }
   return 0xFF;
@@ -178,7 +173,7 @@ uint8_t GetSectorNo(uint32_t Address)
 
 inline uint32_t SectStartAddress(uint8_t SectNo)
  {
-  return Sectors[SectNo].Start;
+  return SectorsAddr[SectNo].Start;
  }
 
 
@@ -187,4 +182,14 @@ bool TheBurnIsFinished()
   return BurnEnded;
  }
 
+
+bool ApplicationExists()
+ {
+  BL_Conf_s BlConf;
+  uint32_t FoundCRC;
+  GetBLConf(&BlConf);
+  MX_CRC_Init();  /* The initialization is required due to running this checking application function before all the initializations. */
+  FoundCRC = HAL_CRC_Calculate(&hcrc, (uint32_t*)BlConf.StartProgAddr, (uint32_t)BlConf.EndProgAddr - (uint32_t)BlConf.StartProgAddr);
+  return BlConf.ProgCRC == FoundCRC;
+ }
 

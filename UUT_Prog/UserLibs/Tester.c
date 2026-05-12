@@ -660,7 +660,9 @@ void DevTestTask(void *pvParameters)
   DevTaskParams_s *DevTaskParams = pvParameters;
   DevTestMesg_s Message;
   bool Result = false;
+#ifdef DEBUG
   int i;
+#endif
   for(;;)
    {
     if(pdPASS == xQueueReceive(DevTaskParams->DevTestQue, &Message, portMAX_DELAY))

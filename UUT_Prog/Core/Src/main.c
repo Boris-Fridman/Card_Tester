@@ -38,7 +38,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -81,7 +80,7 @@ int main(void)
 //  ResetReason_e ResetReason;
 //  ResetReason = CheckResetReason();
   AdjustIntVectTable();  /* Adjusting the vector table to beginning of the program. Its necessary in case the program is used with bootloader and starts not from beginning of the flash. */
-  LoadConf();
+//  LoadConf();
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -216,7 +215,7 @@ void SystemClock_Config(void)
 
  /* MPU Configuration */
 
-void MPU_Config(void)
+void /*__attribute__((optimize("Og")))*/ MPU_Config(void)
 {
   MPU_Region_InitTypeDef MPU_InitStruct = {0};
 
