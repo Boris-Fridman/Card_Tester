@@ -147,7 +147,7 @@ void InitRTPrintf();
  * @code
  *
  * @param
- * "const char *format, ..." these are the regular parametes of the variadic function
+ * "const char *format, ..." these are the regular parameters of the variadic function
  * the same ones that are used in the function "printf()"
  *
  * @return

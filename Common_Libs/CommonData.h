@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+
+/*======================================================================================================================*/
+
 /**
  * Terminal Colors
  *
@@ -34,7 +37,7 @@
 
 
 
-
+/*======================================================================================================================*/
 
 /**
  * Min / Max macros
@@ -47,7 +50,9 @@
  */
 #define DIV_RND(X,Y)    ( ((X) + (Y) / 2) / (Y) )     /* Deviation with rounding.      10/6 will give 2 and 10/3 will give 3  */
 #define DIV_RND_UP(X,Y) ( ((X) + (Y) - 1) / (Y) )     /* Deviation with rounding up.   10/6 will give 2 and 10/3 will give 4  */
-#define DIV_RND_DN(X,Y) ( (X) / (Y)             )     /* Deviation with rounding down. 10/6 will give 1 and 10/3 will give 3 Regular deviation equal to regular "/". Is defined for compliation the previous macros deviations */
+#define DIV_RND_DN(X,Y) ( (X) / (Y)             )     /* Deviation with rounding down. 10/6 will give 1 and 10/3 will give 3 Regular deviation equal to regular "/". Is defined for compilation the previous macros deviations */
+
+/*======================================================================================================================*/
 
 /**
  * Macro for preventing warnings in case of unused variables.
@@ -56,7 +61,7 @@
 #define UNUSED(X) (void)X      /* To avoid gcc/g++ warnings */
 #endif /* UNUSED */
 
-
+/*======================================================================================================================*/
 
 /**
  * Test data definitions
@@ -70,7 +75,9 @@
 #define MAX_TEST_PATTERN_SIZE   200                       /* Maximum permitted Length of pattern. Also is used as the maximal size of code segment sent during OTA Update of the Test Program . */
 #define MIN_TIME_OUT            1000        /* ms  */     /* Minimal timeout to wait for response. */
 
-#define MAX_ADC_CHECK_TIME      50          /* µs  */     /* Maximal time period required for testing ADC in one interration is given in micorseconds.*/
+#define MAX_ADC_CHECK_TIME      50          /* µs  */     /* Maximal time period required for testing ADC in one interaction is given in microseconds.*/
+
+/*======================================================================================================================*/
 
 /**
  * Internet information for sending and receiving call-events.
@@ -79,7 +86,7 @@
 #define BL_HOST_NAME           "BL_of_CardTester"         /* Server Host Name for BootLoader with which the DHCP Connection is recognized. */
 #define DESTIN_IP              "192.168.1.113"            /* Server IP address to which are sent the call messages. */
 #define DESTIN_PORT             8080                      /* Server port to which are sent the call messages. */
-#define BUFFER_SIZE             1024                      /* The length in bytes, of the buffer pointed by the buf paramter that is used by the recvfrom() function. */
+#define BUFFER_SIZE             1024                      /* The length in bytes, of the buffer pointed by the buf parameter that is used by the recvfrom() function. */
 
 #define CRC_SIZE               ( sizeof(uint32_t) )
 #define MAX_SEND_MSG_SIZE      ( sizeof(TestData_s) + MAX_TEST_PATTERN_SIZE + CRC_SIZE )
@@ -87,6 +94,8 @@
 #define MAX_RECV_MSG_SIZE      ( sizeof(TestResult_s) + CRC_SIZE )
 #define MIN_RECV_MSG_SIZE      ( sizeof(TestResult_s) + CRC_SIZE )
 
+
+/*======================================================================================================================*/
 
 typedef enum __attribute__((__packed__)) PeriphType_e  // The attribute "__attribute__((__packed__))" is defined to make the enumeration to be in one byte to ensure the correct data length while sending. 
  {
@@ -117,7 +126,7 @@ typedef struct PeriphBitField_s
   uint8_t Reserved       : 2;
  }PeriphBitField_s;
 
- typedef struct __attribute__((packed)) TestData_s /* The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending. */
+ typedef struct __attribute__((packed)) TestData_s /* The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data length while sending. */
  {
   uint32_t Test_ID;               /* In case of OTA Update is used as start address in flash of code segment. */
   uint32_t TestTime;
@@ -128,12 +137,12 @@ typedef struct PeriphBitField_s
  }TestData_s;
 
 
-typedef struct __attribute__((packed)) TestResult_s /* The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data lendght while sending. */
+typedef struct __attribute__((packed)) TestResult_s /* The attribute "__attribute__((packed))" is defined to make the struct to be at the exact size as it is defined to ensure the correct data length while sending. */
  {
-  uint32_t Test_ID;
+  uint32_t Test_ID;              /* In case of OTA Update is used as start address in flash of code segment. */
   PeriphBitField_s Periph_B_F;
   PeriphBitField_s Results_B_F;
-  TestResType_e TestResult;
+  TestResType_e TestResult;      /* In case of OTA Update is used for signalize if the burning was success of failed. */
  }TestResult_s;
 
 #define Timer_Flag (1 << E_TIMER)
@@ -143,6 +152,8 @@ typedef struct __attribute__((packed)) TestResult_s /* The attribute "__attribut
 #define ADC_Flag   (1 << E_ADC)
 
 
+/*======================================================================================================================*/
+
 extern char const * const ResultColors[];   /* Colors for showing results : [0] - for fail result and [1] - for pass result. */
 extern char const * const ResultMessages[]; /* Messages for showing result: [0] - for fail result and [1] - for pass result. */
 
@@ -150,22 +161,60 @@ extern char const * const PeriphNames[E_NUM_PERIPHS]; /* Names for peripherals t
 
 extern TestData_s const ResetCondition;  /* Is used for making reset to the board card. */
 
-#define DEF_INIT_VAL 0xEF45AB12
+/*======================================================================================================================*/
+
+
+/*======================================================================================================================*/
 
 /**
+ * @brief Calculates CRC from given block of data.
+ *
+ * @code
+ * uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal);
+ * @code
+ *
+ * @param Data     The pointer to the first address of memory in which the data exists.
+ *
+ * @param Length   The length of the data.
+ *
+ * @param InitVal The initialization value.
+ *
+ * @return Calculated CRC.
  *
  */
 uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal);
 
 /**
+ * @brief Appends to the end of the data array the calculated CRC from it. The length must include the place of the CRC.
+ *        For example if the data has length 8 the length given as parameter must be 12 = 8 + 4. The CRC has 4 bytes of length.
  *
+ * @code
+ * void Add_CRC(uint8_t buf[], size_t len);
+ * @code
+ *
+ * @param buf  The start of data.
+ *
+ * @param len  The length of data including CRC size. For example if buffer has length of 8 bytes the len must be 12: 8 +4 = 12.
  */
 void Add_CRC(uint8_t buf[], size_t len);
 
 /**
+ * @brief Checks if the CRC is correct.
+ *
+ * @code
+ * bool CRC_Correct(uint8_t buf[], size_t len);
+ * @code
+ *
+ * @param buf   The start of data
+ *
+ * @param len   The length of data. Including CRC.
+ *              For example if the given length is 12 the CRC checking will be made from the first 8 bytes
+ *              and the result will be compaired to the last 4 bytes.
  *
  */
 bool CRC_Correct(uint8_t buf[], size_t len);
+
+/*======================================================================================================================*/
 
 /**
  * @brief
@@ -186,8 +235,6 @@ bool CRC_Correct(uint8_t buf[], size_t len);
  *
  * @param TestPattern  The pattern for testing the data. Is given as the pointer to pointer to start of the data.
  *                     Must be freed at the end of usage by the procedure "FreeTestPattern()" to prevent the memory leakage.
- *
- *
  */
 void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern);
 
@@ -226,7 +273,8 @@ void FreeTestPattern(uint8_t **TestPattern);
 size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData);
 
 /**
- * @brief Frees the "**RespData" allocated by the procedure "EncodeRespData()".
+ * @brief
+ * Frees the "**RespData" allocated by the procedure "EncodeRespData()".
  * No need to check the condition. It checks if the pointer is not NULL and only in this case it frees the memory.
  * After freeng the memory it sets the pointer to NULL.
  *
@@ -239,7 +287,7 @@ size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData);
  */
 void FreeRespData(uint8_t **RespData);
 
-
+/*======================================================================================================================*/
 
 #define START_FLASH_ADDRESS   0x08000000
 #define START_PROG_OFFSET     0x20000  // 0x00000    0x08000 0x10000 0x18000   0x20000  0x40000   0x80000   0xC0000
@@ -254,6 +302,8 @@ typedef enum CommandTypes_e
   OTA_END   = 0x03
  }
 CommandTypes_e;
+
+/*======================================================================================================================*/
 
 #endif  //  ____CommonData_h__
 

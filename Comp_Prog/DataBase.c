@@ -15,6 +15,14 @@ void PrintDBError(int ErrorCode);
 
 /*======================================================================================================================*/
 
+/*
+ * *************************************************************************************************************
+ **          Database accessing Functions / Procedures
+ * *************************************************************************************************************
+ */
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Loads existing database or creates a new one if any database doesn't exist.                                         */
 int CreateLoadDatabase(sqlite3 **conn)
  {
   int result;
@@ -46,6 +54,8 @@ int CreateLoadDatabase(sqlite3 **conn)
    }
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Checks all the test ids in the database and returns the biggest one. (It's required to decide which test id must be given to the new test.) */
 int GetLastTestIDFromDataBase(sqlite3 **conn)
  {
   int result, valtoret = 0, v;
@@ -88,6 +98,8 @@ int GetLastTestIDFromDataBase(sqlite3 **conn)
   return valtoret;
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Writes results of the main test.                                                                                    */
  int WriteToDataBase(sqlite3 **conn, int test_id, char date_time[], TestResType_e test_result)
   {
    //char *err_msg;

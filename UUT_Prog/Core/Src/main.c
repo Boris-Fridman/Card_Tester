@@ -77,10 +77,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-//  ResetReason_e ResetReason;
-//  ResetReason = CheckResetReason();
   AdjustIntVectTable();  /* Adjusting the vector table to beginning of the program. Its necessary in case the program is used with bootloader and starts not from beginning of the flash. */
-//  LoadConf();
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -128,9 +125,6 @@ int main(void)
 #endif
 
   HAL_TIM_Base_Start(&htim6);
-
-//  printf("\033[2J\033[H");  //ansi clear screen.
-//  printf(TermColorsReset);  //ansi reset colors in screen.
 
   /* USER CODE END 2 */
 

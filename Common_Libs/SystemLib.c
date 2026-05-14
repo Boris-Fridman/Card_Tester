@@ -102,20 +102,18 @@ return len;
 void AdjustIntVectTable()  /* Adjusts Interrupt Vector Table MCU pointer according to code location in flash memory. */
  {
   __disable_irq();
-#ifdef __GNUC__     // In case of GCC compiler
+#ifdef __GNUC__     /* In case of GCC compiler */
   extern void *g_pfnVectors[];
-  SCB->VTOR = (uint32_t)g_pfnVectors;  // In case of GCC compiler
+  SCB->VTOR = (uint32_t)g_pfnVectors;  /* In case of GCC compiler */
 #endif
-#ifdef __ICCARM__  // In case of IAR compiler
+#ifdef __ICCARM__  /* In case of IAR compiler */
   extern void __vector_table;
-  SCB->VTOR = (uint32_t)&__vector_table;  // In case of IAR compiler
+  SCB->VTOR = (uint32_t)&__vector_table;  /* In case of IAR compiler */
 #endif
-#ifdef __CC_ARM    // In case of Keil compiler  -- Not tested yet.
+#ifdef __CC_ARM    /* In case of Keil compiler  -- Not tested yet. */
   extern void __Vectors;
-  SCB->VTOR = (uint32_t)&__Vectors;  // In case of Keil compiler  -- Not tested yet.
+  SCB->VTOR = (uint32_t)&__Vectors;  /* In case of Keil compiler  -- Not tested yet. */
 #endif
-
-  //__set_MSP(*(__IO uint32_t*)SCB->VTOR);
 
   __enable_irq();
 
@@ -133,7 +131,7 @@ ResetReason_e CheckResetReason()
     if(__HAL_RCC_GET_FLAG(RestFlags[i]))
      break;
    }
-  __HAL_RCC_CLEAR_RESET_FLAGS();  // Clearing flags to prevent their existence at the next reason.
+  __HAL_RCC_CLEAR_RESET_FLAGS();  /* Clearing flags to prevent their existence at the next reset reason checking. */
   return i;
  }
 
@@ -150,31 +148,6 @@ ResetReason_e CheckResetReason()
 
 void LoadConf()
  {
-//  uint32_t fs = CODE_SIZE_KB;
-
-  /* Declare symbols from the linker script */
-//  extern uint32_t _svect;
-//  extern uint32_t _evect;
-//  extern uint32_t _stext;   /* Start of code */
-//  extern uint32_t _etext;   /* End of code + rodata */
-//  extern uint32_t _sidata;  /* Start of data initialization in Flash */
-//  extern uint32_t _eidata;  /* End of data initialization in Flash */
-//  extern uint32_t _sdata;   /* Start of data in RAM */
-//  extern uint32_t _edata;   /* End of data in RAM */
-
-//  uint32_t sv = (uint32_t)&_svect;
-//  uint32_t ev = (uint32_t)&_evect;
-//  uint32_t st = (uint32_t)&_stext;
-//  uint32_t et = (uint32_t)&_etext;
-//  uint32_t si = (uint32_t)&_sidata;
-//  uint32_t ei = (uint32_t)&_eidata;
-//  uint32_t sd = (uint32_t)&_sdata;
-//  uint32_t ed = (uint32_t)&_edata;
-#ifndef Debug
-//  MemConfig.BootLoaderConfig.StartProgAddr = &_stext;
-//  MemConfig.BootLoaderConfig.EndProgAddr = &_eidata;
-#endif
-
   MemConfig = *(MemConf_s *)(SectorsAddr[FLASH_CONFIG_SECTOR].Start);
  }
 

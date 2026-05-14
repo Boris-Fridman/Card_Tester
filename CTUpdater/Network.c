@@ -15,7 +15,13 @@ static int sockfd;
 static bool BootloaderFound = false;
 static bool UUTProgramFound = false;
 /*======================================================================================================================*/
-
+/*
+ * *************************************************************************************************************
+ **          Network Init Deinit Functions / Procedures
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Initilizes the network (uses by the function "OpenSocketInNetwork()").                                              */
 int InitNetwork()
  {
   bool StdErrNoPiping, StdOutNoPiping;
@@ -44,7 +50,7 @@ int InitNetwork()
   else /* Bootloader was found itself. */
    BootloaderFound = true;
 
-  Result = OpenNetwork(host);
+  Result = OpenSocketInNetwork(host);
 
   if((Result == 0) && UUTProgramFound)
    {
@@ -65,7 +71,7 @@ int InitNetwork()
        }
       printf("\n\r");
       printf("Retrying... \n\r");
-      Result = OpenNetwork(host);
+      Result = OpenSocketInNetwork(host);
      } 
     while (Result != 0);
     host = gethostbyname(BL_HOST_NAME);  /* Trying to detect the hostname of bootloader. */
@@ -87,7 +93,9 @@ int InitNetwork()
   return Result;
  }
 
-int OpenNetwork(struct hostent *host)
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Opens the network according the given host address.                                                                 */
+int OpenSocketInNetwork(struct hostent *host)
  {
   bool NoPiping;
   NoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
@@ -110,16 +118,26 @@ int OpenNetwork(struct hostent *host)
   
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Closes network.                                                                                                     */
 void CloseNetwork()
  {
   close(sockfd);
  }
 
+/*======================================================================================================================*/
+/*
+ * *************************************************************************************************************
+ **          Network Send / Receive Functions / Procedures
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Sends command via network to the slave device.                                                                      */
 int SendCommandToNetwork(TestData_s const * const TestData, uint8_t TestPattern[])
  {
   uint8_t *Pack;
   size_t PackSizeNetto, PackSizeFull;
-  ssize_t result;
+  ssize_t result = 0;
   bool StdErrNoPiping, StdOutNoPiping;
   StdErrNoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
   StdOutNoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
@@ -140,12 +158,14 @@ int SendCommandToNetwork(TestData_s const * const TestData, uint8_t TestPattern[
       if(StdOutNoPiping)fprintf(stdout, "%s", TermGreen);
       printf("The message was sent successfully.  %ld bytes were sent.\n\r", result);
       if(StdOutNoPiping)fprintf(stdout, "%s", TermColorsReset);
+      result = 0;
      }
     else
      {
       if(StdOutNoPiping)fprintf(stdout, "%s", TermRed);
       printf("Error in sending.\n\r");
       if(StdOutNoPiping)fprintf(stdout, "%s", TermColorsReset);
+      result = -1;
      }
     free(Pack);
    }
@@ -154,11 +174,14 @@ int SendCommandToNetwork(TestData_s const * const TestData, uint8_t TestPattern[
     if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
     fprintf(stderr, "Cannot allocate the memory.\n\r");
     if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
+    result = -2;
    }
 
-  return 0;
+  return result;
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Waits for response for a while written in TimeOut value or infinittely if TimeOut is "0".                           */
 int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
  {
   struct timeval tv;
@@ -180,6 +203,7 @@ int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
     if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
     fprintf(stderr, "Error setting timeout\n\r");
     if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
+    return -3;
    }
 
 
@@ -207,10 +231,10 @@ int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
     if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
     fprintf(stderr, "Problem in receiving data.\n\r");
     if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
-    return -1;
+    return -2;
    }
 
-  return -1;
+  return -4;
  }
 
 /*======================================================================================================================*/

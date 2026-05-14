@@ -21,15 +21,20 @@
 
 /*======================================================================================================================*/
 
-
+/*  Burns segment of the given data to the given address at the given length. */
 HAL_StatusTypeDef ProgSegment(uint32_t StartAddress, uint8_t Segment[], uint8_t Length);
 
+/* Clears segments' flags before the flash programming.                                                                 */
 void ResetErasedSectorsStatuses();
 
+/* Returns number of the last sector for erasing according the segment start address and length                         */
+/* on which the segment must be programmed. (The sector is always longer than the segment.)                             */
 uint8_t SectorToErase(uint32_t StartAddress, uint8_t Length);
 
+/*   Returns the sector number in which exists the given address in the flash.                                          */
 uint8_t GetSectorNo(uint32_t Address);
 
+/*   Returns the sector's start address according the given number of the sector.                                       */
 uint32_t SectStartAddress(uint8_t SectNo);
 
 /*======================================================================================================================*/
@@ -38,7 +43,13 @@ extern uint32_t _eidata;   /* End of data in RAM */
 static uint32_t LastBLAddress = (uint32_t)&_eidata;
 static volatile bool BurnEnded = false;
 /*======================================================================================================================*/
-
+/*
+ * *************************************************************************************************************
+ **          Flash Programming Functions / Procedures
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Burns the received segment.                                                                                        */
 void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnResult)
  {
   HAL_StatusTypeDef Result;
@@ -105,6 +116,9 @@ void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnR
 
  }
 
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Burns segment of the given data to the given address at the given length. */
 HAL_StatusTypeDef ProgSegment(uint32_t StartAddress, uint8_t Segment[], uint8_t Length)
  {
   HAL_StatusTypeDef Result;
@@ -129,19 +143,19 @@ HAL_StatusTypeDef ProgSegment(uint32_t StartAddress, uint8_t Segment[], uint8_t 
  }
 
 
-
-
-
+/*----------------------------------------------------------------------------------------------------------------------*/
 
 bool SectorNotErased[FLASH_SECTOR_TOTAL];
-
+/* Clears segments' flags before the flash programming.                                                                 */
 void ResetErasedSectorsStatuses()
  {
   for(uint8_t i = 0; i < FLASH_SECTOR_TOTAL; i++)
    SectorNotErased[i] = true;
  }
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Returns number of the last sector for erasing according the segment start address and length                         */
+/* on which the segment must be programmed. (The sector is always longer than the segment.)                             */
 uint8_t SectorToErase(uint32_t StartAddress, uint8_t Length)
  {
   uint8_t i;
@@ -158,6 +172,8 @@ uint8_t SectorToErase(uint32_t StartAddress, uint8_t Length)
   return 0xFF;
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Returns the sector number in which exists the given address in the flash.                                          */
 uint8_t GetSectorNo(uint32_t Address)
  {
   uint8_t i;
@@ -170,19 +186,23 @@ uint8_t GetSectorNo(uint32_t Address)
  }
 
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Returns the sector's start address according the given number of the sector.                                       */
 inline uint32_t SectStartAddress(uint8_t SectNo)
  {
   return SectorsAddr[SectNo].Start;
  }
 
 
+/*======================================================================================================================*/
+/*  Gives result to main program if the burning of all of the program was finished. According to this result the main program decides if the bootloader must continue running or stop running and run the main program.  */
 bool TheBurnIsFinished()
  {
   return BurnEnded;
  }
 
-
+/*======================================================================================================================*/
+/*   Checks the main application existence at the beginning for bootloader to decide if it (bootloader) must run the main application (if it exists) or must run itself.    */
 bool ApplicationExists()
  {
   BL_Conf_s BlConf;

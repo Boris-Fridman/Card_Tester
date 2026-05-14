@@ -26,6 +26,15 @@
  *
  */
 void InitNetwork(void);
+
+/**
+ *
+ * @brief Deinitializes the network.
+ *
+ * @code
+ * void DeinitNetwork(void);
+ * @code
+ */
 void DeinitNetwork(void);
 
 

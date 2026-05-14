@@ -14,13 +14,23 @@
 #include "Network.h"
 
 
+/*======================================================================================================================*/
+
 static char ImgFileName[PATH_FILE_NAME_LEN];                   /* Name of file. */
 static int fd;                                                 /* File handle pointer. */
 static bool FileIsOpen = false;                                /* Flag signalizes if the log file is open or not. */
 
 
+/*======================================================================================================================*/
 
+/*
+ * *************************************************************************************************************
+ **          Image Programming Functions / Procedures
+ * *************************************************************************************************************
+ */
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Initilizes image. Checks existance of the given file with image (".bin") file.                                      */
 int InitImage(char ImgFilePathName[])
  {
   bool StdErrNoPiping, StdOutNoPiping;
@@ -48,6 +58,8 @@ int InitImage(char ImgFilePathName[])
 
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Sends the image with update existed in ".bin" file to the network segment by segment. If the respond wasn't given the function will wait infinitly. */
 int SendImageToNetwork()
  {
   uint8_t CodeSegment[MAX_TEST_PATTERN_SIZE];
@@ -88,8 +100,8 @@ int SendImageToNetwork()
    }
   return 0;
  }
-
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Closes the image file.                                                                                              */
 void CloseImage()
  {
   if(FileIsOpen)
@@ -100,3 +112,5 @@ void CloseImage()
 
  }
 
+
+/*======================================================================================================================*/

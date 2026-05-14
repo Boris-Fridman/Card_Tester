@@ -24,10 +24,10 @@
 
 /*======================================================================================================================*/
 
-#define xNETWORK_PRIORITY 0
-#define xNETWORK_STACK_SIZE MAX(configMINIMAL_STACK_SIZE, 512)
+#define xNETWORK_PRIORITY       0
+#define xNETWORK_STACK_SIZE     MAX(configMINIMAL_STACK_SIZE, 512)
 
-#define TEST_REPORT_QUEUE_LEN 5        /*  Length of the test report queue. */
+#define TEST_REPORT_QUEUE_LEN   5        /*  Length of the test report queue. */
 
 /*======================================================================================================================*/
 
@@ -37,13 +37,18 @@ TaskHandle_t xNewtworkTaskHandle;      /*  Handle to network task.          */
 
 /*======================================================================================================================*/
 
+/* Network task procedure. Receives message from computer, requests for the test, waits for the test results and sends back response with them. */
 void NetworkTask(void *pvParameters);
+
+/*  Waits until the network connection is established.                                                                  */
 void Wait_for_DHCP(void);
+
+/*  Sends response via the network.                                                                                     */
 void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, TestResult_s TestResult);
 
 
 /*======================================================================================================================*/
-
+/*  Prepares the network task.                                                                                          */
 void NetworkInit()
  {
   BaseType_t result;
@@ -56,8 +61,6 @@ void NetworkInit()
     for(;;);
    }
 
-
-
   result = xTaskCreate(NetworkTask, "Network Task", xNETWORK_STACK_SIZE, NULL, xNETWORK_PRIORITY, &xNewtworkTaskHandle);
   if(result != pdPASS)
    {
@@ -67,8 +70,8 @@ void NetworkInit()
 
  }
 
-
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Network task procedure. Receives message from computer, requests for the test, waits for the test results and sends back response with them. */
 void NetworkTask(void *pvParameters)
  {
   struct netconn *conn;
@@ -118,20 +121,12 @@ void NetworkTask(void *pvParameters)
 
           FreeTestPattern(&TestPattern);
 
-          TestResult_s TestResult = { .Test_ID = TestData.Test_ID, .Periph_B_F = TestData.Periph_B_F, .TestResult =  E_TEST_FAILED}; // Defiend temperary. will be moved to other place.
-//          TestResult.Test_ID = TestData.Test_ID;
-//          TestResult.Periph_B_F = TestData.Periph_B_F;
-//          TestResult.TestResult = E_TEST_FAILED;
-          if(pdPASS == xQueueReceive(TestReportQueue, &TestResult, portMAX_DELAY))  // In the future will be added limmited timout.
+          TestResult_s TestResult = { .Test_ID = TestData.Test_ID, .Periph_B_F = TestData.Periph_B_F, .TestResult =  E_TEST_FAILED};
+          if(pdPASS == xQueueReceive(TestReportQueue, &TestResult, portMAX_DELAY))  // In the future will be added limited timeout.
            {
             SendResponse(conn, &addr, port, TestResult);
            }
-
-
-          //SendResponse(conn, &addr, port, TestResult);                       // Defined here temperary. Will be moved to other place.
-
          }
-
         vTaskDelay(pdMS_TO_TICKS(1));
        }
      }
@@ -147,8 +142,8 @@ void NetworkTask(void *pvParameters)
  }
 
 
-
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Waits until the network connection is established.                                                                  */
 void Wait_for_DHCP(void)
  {
   extern struct netif gnetif;
@@ -164,7 +159,8 @@ void Wait_for_DHCP(void)
   /* Proceed with Netconn UDP client... */
  }
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Sends response via the network.                                                                                     */
 void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, TestResult_s TestResult)
  {
   struct netbuf *buf;
@@ -177,9 +173,9 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
   if(Pack)
    {
     buf = netbuf_new();
-    netbuf_ref(buf, Pack, Len);  //  netbuf_ref(buf, Pack, sizeof(TestResult_s) + sizeof(uint32_t));
+    netbuf_ref(buf, Pack, Len);
     netconn_sendto(conn, buf, ip4addr, ipport);
-    netbuf_delete(buf); /* Freeing buffer after sending */
+    netbuf_delete(buf);                       /* Freeing buffer after sending */
     ip_str = ip4addr_ntoa(ip4addr);
     port = ipport;
     rtprintf("%sThe response was sent to %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
@@ -190,6 +186,8 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
 
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Gives result to the "Network.c/h" for sending the answer back.                                                      */
 void GiveResults(PeriphBitField_s DevResults, PeriphBitField_s DevsUnderTest, uint32_t Test_ID)
  {
   TestResult_s TestResult;
@@ -208,10 +206,6 @@ void GiveResults(PeriphBitField_s DevResults, PeriphBitField_s DevsUnderTest, ui
   TestResult.TestResult = (FinalResult ? E_TEST_SUCCEEDED : E_TEST_FAILED);
 
   xQueueSend(TestReportQueue, &TestResult, pdMS_TO_TICKS(10));
-  // Here must be implemented connection parameters.
-  //  .....  *****  .....
-  // And than the next line must be uncommented.
-  //SendResponse(conn, &addr, port, TestResult);                       // Is commented out due to connection for back response is not implemented yet.
  }
 
 

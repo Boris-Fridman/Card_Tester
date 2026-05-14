@@ -16,10 +16,19 @@ TestData_s const ResetCondition = {.Bit_Pattern_Length = 0, .Num_Interations = 0
 
 /*======================================================================================================================*/
 
+#define DEF_INIT_VAL 0xEF45AB12
+
 #define POLYNOM   0x04C11DB7
 #define CRC_SHIFT 0
 #define MSB_MASK  0xAB25CD87
 
+/*
+ * *************************************************************************************************************
+ **          CRC Checking Functions / Procedures
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Calculates CRC from given block of data.                                                                           */
 uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal)
  {
   uint32_t Result;
@@ -40,14 +49,19 @@ uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal)
   return Result;
  }
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Appends to the end of the data array the calculated CRC from it. The length must include the place of the CRC.     */
+/* For example if the data has length 8 the length given as parameter must be 12 = 8 + 4. The CRC has 4 bytes of length.*/
 void Add_CRC(uint8_t buf[], size_t len)
  {
   uint32_t CalcCRC;
   CalcCRC = FindCRC(buf, len - CRC_SIZE, DEF_INIT_VAL);
   memcpy(buf + len - CRC_SIZE, &CalcCRC, CRC_SIZE);
  }
- 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Checks if the CRC is correct.                                                                                       */
+/*  For example if the given length is 12 the CRC checking will be made from the first 8 bytes                          */
+/*  and the result will be compaired to the last 4 bytes.                                                               */
 bool CRC_Correct(uint8_t buf[], size_t len)
  {
   uint32_t CalcCRC, RecvCRC;
@@ -56,6 +70,17 @@ bool CRC_Correct(uint8_t buf[], size_t len)
   return CalcCRC == RecvCRC;
  }
 
+/*
+ * *************************************************************************************************************
+ **          Encoding Decoding Data Functions / Procedures
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* This function decodes the packet received from network.                                                              */
+/* Attention !!!                                                                                                        */
+/* The last parameter "TestPattern" is given as pointer to pointer to dynamically allocated memory.                     */
+/* That means that at the end of the program it must be freed by the procedure "FreeTestPattern()"                      */
+/* to avoid the memory leakage.                                                                                         */
 void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern)
  {
   uint8_t *Pack;
@@ -71,13 +96,16 @@ void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **T
       memcpy(*TestPattern, Data+sizeof(TestData_s),TestData->Bit_Pattern_Length);
 
       /* At the end of the usage with the returned data the "**TestPattern" must be freed by the "FreeTestPattern()" procedure. */
-      //free(*TestPattern); Not in use. the "**TestPattern" must be freed by the "FreeTestPattern()" procedure by the user.
+      /* free(*TestPattern); Not in use. the "**TestPattern" must be freed by the "FreeTestPattern()" procedure by the user. */
      }
    }
 
  }
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* This Procedure is used for freeing the "**TestPattern" reserved by the procedure "DecodeReqData()".                  */
+/* No need to check anything before running it because it checks automatically inside if the memory                     */
+/* is reserved and sets the pointer to NULL after freeing it.                                                           */
 void FreeTestPattern(uint8_t **TestPattern)
  {
   if(*TestPattern != NULL)
@@ -88,7 +116,11 @@ void FreeTestPattern(uint8_t **TestPattern)
 
  }
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Encodes data for response to the parameter "**RespData".                                                             */
+/* Attention !!!                                                                                                        */
+/* The procedure allocates dynamic memory for to which the parameter "**RespDtata" points.                              */
+/* The freeing must be done by the "FreeRespData()".                                                                    */
 size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
  {
   size_t Len;
@@ -105,6 +137,10 @@ size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
   return Len;
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Frees the "**RespData" allocated by the procedure "EncodeRespData()".                                                */
+/* No need to check the condition. It checks if the pointer is not NULL and only in this case it frees the memory.      */
+/* After freeng the memory it sets the pointer to NULL.                                                                 */
 void FreeRespData(uint8_t **RespData)
  {
   if(*RespData != NULL)
@@ -121,3 +157,12 @@ void FreeRespData(uint8_t **RespData)
 
 
 //  ₙⁿ𐄁 ⁰¹²³⁴⁵⁶⁷⁸  ₀₁₂₃₄₅₆₇₈₉  ⩽⩾
+//  ₒᵤₜ ᵢₙ   
+//  ≡≣≡≣
+// ㎐㎑㎒㎓㎔
+//          ------
+//  ◀ ▶   ◀⸻ ⸺▶   ◀▬▬▬ ▬▬▬▶  <-- -->  🡄🬋🬋🡆  ⇶   ⇇⇉
+//  ▤▥▦▧▨▩▪▫░▒▓
+//  🔏🔐🔑🔒🔓 🚏  🚥🚦🚪
+
+

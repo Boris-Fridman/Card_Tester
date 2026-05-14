@@ -33,25 +33,25 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  14 .ARM.attributes 00000030  00000000  00000000  0001c21c  2**0
                   CONTENTS, READONLY
- 15 .debug_info   00024fe7  00000000  00000000  0001c24c  2**0
+ 15 .debug_info   00024fb4  00000000  00000000  0001c24c  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_abbrev 00006f11  00000000  00000000  00041233  2**0
+ 16 .debug_abbrev 00006efd  00000000  00000000  00041200  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_aranges 00001a78  00000000  00000000  00048148  2**3
+ 17 .debug_aranges 00001a78  00000000  00000000  00048100  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_rnglists 000014d5  00000000  00000000  00049bc0  2**0
+ 18 .debug_rnglists 000014d5  00000000  00000000  00049b78  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_macro  000355ba  00000000  00000000  0004b095  2**0
+ 19 .debug_macro  000355ab  00000000  00000000  0004b04d  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .debug_line   0002d1fc  00000000  00000000  0008064f  2**0
+ 20 .debug_line   0002d1ec  00000000  00000000  000805f8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_str    001029a4  00000000  00000000  000ad84b  2**0
+ 21 .debug_str    0010298b  00000000  00000000  000ad7e4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .comment      00000043  00000000  00000000  001b01ef  2**0
+ 22 .comment      00000043  00000000  00000000  001b016f  2**0
                   CONTENTS, READONLY
- 23 .debug_frame  00006f08  00000000  00000000  001b0234  2**2
+ 23 .debug_frame  00006f00  00000000  00000000  001b01b4  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 24 .debug_line_str 00000080  00000000  00000000  001b713c  2**0
+ 24 .debug_line_str 00000080  00000000  00000000  001b70b4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -445,10 +445,10 @@ Disassembly of section .text:
  80005ea:	bf00      	nop
 
 080005ec <FindCRC>:
-#define POLYNOM   0x04C11DB7
-#define CRC_SHIFT 0
-#define MSB_MASK  0xAB25CD87
-
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Calculates CRC from given block of data.                                                                           */
 uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal)
  {
  80005ec:	b580      	push	{r7, lr}
@@ -534,7 +534,9 @@ uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal)
 
 08000674 <Add_CRC>:
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Appends to the end of the data array the calculated CRC from it. The length must include the place of the CRC.     */
+/* For example if the data has length 8 the length given as parameter must be 12 = 8 + 4. The CRC has 4 bytes of length.*/
 void Add_CRC(uint8_t buf[], size_t len)
  {
  8000674:	b580      	push	{r7, lr}
@@ -569,7 +571,10 @@ void Add_CRC(uint8_t buf[], size_t len)
  80006a8:	ef45ab12 	.word	0xef45ab12
 
 080006ac <CRC_Correct>:
- 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Checks if the CRC is correct.                                                                                       */
+/*  For example if the given length is 12 the CRC checking will be made from the first 8 bytes                          */
+/*  and the result will be compaired to the last 4 bytes.                                                               */
 bool CRC_Correct(uint8_t buf[], size_t len)
  {
  80006ac:	b580      	push	{r7, lr}
@@ -611,7 +616,10 @@ bool CRC_Correct(uint8_t buf[], size_t len)
  80006ec:	ef45ab12 	.word	0xef45ab12
 
 080006f0 <DecodeReqData>:
-
+/* Attention !!!                                                                                                        */
+/* The last parameter "TestPattern" is given as pointer to pointer to dynamically allocated memory.                     */
+/* That means that at the end of the program it must be freed by the procedure "FreeTestPattern()"                      */
+/* to avoid the memory leakage.                                                                                         */
 void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern)
  {
  80006f0:	b580      	push	{r7, lr}
@@ -666,7 +674,7 @@ void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **T
  8000744:	461a      	mov	r2, r3
  8000746:	f014 f8e2 	bl	801490e <memcpy>
       /* At the end of the usage with the returned data the "**TestPattern" must be freed by the "FreeTestPattern()" procedure. */
-      //free(*TestPattern); Not in use. the "**TestPattern" must be freed by the "FreeTestPattern()" procedure by the user.
+      /* free(*TestPattern); Not in use. the "**TestPattern" must be freed by the "FreeTestPattern()" procedure by the user. */
      }
    }
 
@@ -677,8 +685,10 @@ void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **T
  8000750:	bd80      	pop	{r7, pc}
 
 08000752 <FreeTestPattern>:
-
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* This Procedure is used for freeing the "**TestPattern" reserved by the procedure "DecodeReqData()".                  */
+/* No need to check anything before running it because it checks automatically inside if the memory                     */
+/* is reserved and sets the pointer to NULL after freeing it.                                                           */
 void FreeTestPattern(uint8_t **TestPattern)
  {
  8000752:	b580      	push	{r7, lr}
@@ -709,8 +719,10 @@ void FreeTestPattern(uint8_t **TestPattern)
  8000778:	bd80      	pop	{r7, pc}
 
 0800077a <EncodeRespData>:
-
-
+/* Encodes data for response to the parameter "**RespData".                                                             */
+/* Attention !!!                                                                                                        */
+/* The procedure allocates dynamic memory for to which the parameter "**RespDtata" points.                              */
+/* The freeing must be done by the "FreeRespData()".                                                                    */
 size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
  {
  800077a:	b580      	push	{r7, lr}
@@ -765,7 +777,10 @@ size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
  80007c8:	bd80      	pop	{r7, pc}
 
 080007ca <FreeRespData>:
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Frees the "**RespData" allocated by the procedure "EncodeRespData()".                                                */
+/* No need to check the condition. It checks if the pointer is not NULL and only in this case it frees the memory.      */
+/* After freeng the memory it sets the pointer to NULL.                                                                 */
 void FreeRespData(uint8_t **RespData)
  {
  80007ca:	b580      	push	{r7, lr}
@@ -924,7 +939,7 @@ ResetReason_e CheckResetReason()
      break;
  80008c6:	bf00      	nop
    }
-  __HAL_RCC_CLEAR_RESET_FLAGS();  // Clearing flags to prevent their existence at the next reason.
+  __HAL_RCC_CLEAR_RESET_FLAGS();  /* Clearing flags to prevent their existence at the next reset reason checking. */
  80008c8:	4b07      	ldr	r3, [pc, #28]	@ (80008e8 <CheckResetReason+0x90>)
  80008ca:	6f5b      	ldr	r3, [r3, #116]	@ 0x74
  80008cc:	4a06      	ldr	r2, [pc, #24]	@ (80008e8 <CheckResetReason+0x90>)
@@ -951,11 +966,6 @@ void LoadConf()
  {
  80008ec:	b490      	push	{r4, r7}
  80008ee:	af00      	add	r7, sp, #0
-#ifndef Debug
-//  MemConfig.BootLoaderConfig.StartProgAddr = &_stext;
-//  MemConfig.BootLoaderConfig.EndProgAddr = &_eidata;
-#endif
-
   MemConfig = *(MemConf_s *)(SectorsAddr[FLASH_CONFIG_SECTOR].Start);
  80008f0:	4b05      	ldr	r3, [pc, #20]	@ (8000908 <LoadConf+0x1c>)
  80008f2:	461a      	mov	r2, r3
@@ -1703,9 +1713,9 @@ int main(void)
       printf("Finished downloading. Starting main application...\n\r");
  8000d8e:	4807      	ldr	r0, [pc, #28]	@ (8000dac <main+0xa4>)
  8000d90:	f013 fbda 	bl	8014548 <iprintf>
-       * The reset reason is not enough to decide if to run the main program or bootloader itself because the softreset is used for
+       * The reset reason is not enough to decide if to run the main program or bootloader itself because the soft reset is used for
        * making OTA-Update in case the main application received command to reboot the device for making OTA-Update.
-       * So by softupdate is is not possible to know if the reset was done for for making the OTA-Update or for running the main
+       * So by soft update is is not possible to know if the reset was done for for making the OTA-Update or for running the main
        * program after OTA-Update itself.
        */
       MagicNumberVar = MAGIC_NUMBER;
@@ -1713,7 +1723,7 @@ int main(void)
  8000d96:	f04f 325a 	mov.w	r2, #1515870810	@ 0x5a5a5a5a
  8000d9a:	4b03      	ldr	r3, [pc, #12]	@ (8000da8 <main+0xa0>)
  8000d9c:	e9c1 2300 	strd	r2, r3, [r1]
-      NVIC_SystemReset();  // Soft Reset
+      NVIC_SystemReset();  /* Soft Reset */
  8000da0:	f7ff ff9c 	bl	8000cdc <__NVIC_SystemReset>
  8000da4:	2004fff8 	.word	0x2004fff8
  8000da8:	55aa55aa 	.word	0x55aa55aa
@@ -51099,10 +51109,10 @@ pbuf_header_failed:
  8013c28:	0801aae0 	.word	0x0801aae0
 
 08013c2c <BurnData>:
-static uint32_t LastBLAddress = (uint32_t)&_eidata;
-static volatile bool BurnEnded = false;
-/*======================================================================================================================*/
-
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Burns the received segment.                                                                                        */
 void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnResult)
  {
  8013c2c:	b590      	push	{r4, r7, lr}
@@ -51378,6 +51388,9 @@ void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnR
 
 08013e20 <ProgSegment>:
 
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Burns segment of the given data to the given address at the given length. */
 HAL_StatusTypeDef ProgSegment(uint32_t StartAddress, uint8_t Segment[], uint8_t Length)
  {
  8013e20:	e92d 4ff0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
@@ -51505,10 +51518,10 @@ HAL_StatusTypeDef ProgSegment(uint32_t StartAddress, uint8_t Segment[], uint8_t 
  8013f0c:	e8bd 8ff0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 
 08013f10 <ResetErasedSectorsStatuses>:
-
+/*----------------------------------------------------------------------------------------------------------------------*/
 
 bool SectorNotErased[FLASH_SECTOR_TOTAL];
-
+/* Clears segments' flags before the flash programming.                                                                 */
 void ResetErasedSectorsStatuses()
  {
  8013f10:	b480      	push	{r7}
@@ -51542,7 +51555,9 @@ void ResetErasedSectorsStatuses()
 
 08013f44 <SectorToErase>:
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Returns number of the last sector for erasing according the segment start address and length                         */
+/* on which the segment must be programmed. (The sector is always longer than the segment.)                             */
 uint8_t SectorToErase(uint32_t StartAddress, uint8_t Length)
  {
  8013f44:	b480      	push	{r7}
@@ -51628,6 +51643,8 @@ uint8_t SectorToErase(uint32_t StartAddress, uint8_t Length)
 
 08013fd0 <GetSectorNo>:
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Returns the sector number in which exists the given address in the flash.                                          */
 uint8_t GetSectorNo(uint32_t Address)
  {
  8013fd0:	b480      	push	{r7}
@@ -51678,10 +51695,10 @@ uint8_t GetSectorNo(uint32_t Address)
  801401c:	0801ab8c 	.word	0x0801ab8c
 
 08014020 <TheBurnIsFinished>:
-  return SectorsAddr[SectNo].Start;
- }
 
 
+/*======================================================================================================================*/
+/*  Gives result to main program if the burning of all of the program was finished. According to this result the main program decides if the bootloader must continue running or stop running and run the main program.  */
 bool TheBurnIsFinished()
  {
  8014020:	b480      	push	{r7}
@@ -51699,7 +51716,8 @@ bool TheBurnIsFinished()
 
 08014038 <ApplicationExists>:
 
-
+/*======================================================================================================================*/
+/*   Checks the main application existence at the beginning for bootloader to decide if it (bootloader) must run the main application (if it exists) or must run itself.    */
 bool ApplicationExists()
  {
  8014038:	b580      	push	{r7, lr}
@@ -51739,10 +51757,10 @@ bool ApplicationExists()
  8014074:	20000248 	.word	0x20000248
 
 08014078 <UDPReceiveCB>:
-
-
-/*======================================================================================================================*/
-
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Network Receive Callback.                                                                                          */
 void UDPReceiveCB(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
  {
  8014078:	b580      	push	{r7, lr}
@@ -51851,8 +51869,10 @@ void UDPReceiveCB(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_
 	...
 
 08014138 <InitNetwork>:
-
-
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Initializes the network UDP Server.                                                                                */
 void InitNetwork(void)
  {
  8014138:	b580      	push	{r7, lr}
@@ -51890,10 +51910,7 @@ void InitNetwork(void)
  8014172:	4906      	ldr	r1, [pc, #24]	@ (801418c <InitNetwork+0x54>)
  8014174:	4618      	mov	r0, r3
  8014176:	f7fa fd59 	bl	800ec2c <udp_recv>
-//    else
-//     {
-//      udp_remove(upcb);
-//     }
+     }
    }
  }
  801417a:	bf00      	nop

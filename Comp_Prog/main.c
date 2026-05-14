@@ -190,8 +190,8 @@ int ReqDevForMakingTest(int NInt, PeriphBitField_s PeriphBF)
   if(NetResult == 0)
    {
     PrintTestResults(&ResultData);
+    WriteToDataBase(&conn, ResultData.Test_ID, timebuf, ResultData.TestResult);
    }
-  WriteToDataBase(&conn, ResultData.Test_ID, timebuf, ResultData.TestResult);
   return 0;
  }
 

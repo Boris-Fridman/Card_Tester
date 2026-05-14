@@ -11,7 +11,6 @@
  * @code{c}
  * void NetworkInit(void);
  * @code
- *
  */
 void NetworkInit(void);
 
@@ -27,7 +26,6 @@ void NetworkInit(void);
  * @param DevsUnderTest Is the bitfield of devices when each bit is referred to its device and set to "1" if its device was tested.
  *
  * @param Test_ID The test ID of the test of which the results were given.
- *
  */
 void GiveResults(PeriphBitField_s DevResults, PeriphBitField_s DevsUnderTest, uint32_t Test_ID);
 

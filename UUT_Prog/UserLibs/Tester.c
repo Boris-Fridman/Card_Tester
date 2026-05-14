@@ -42,7 +42,7 @@
 #define TEST_RESP_QUEUE_LEN   (DEV_TEST_QUEUE_LEN * E_NUM_PERIPHS)        /* Length of the queue of responses from the single-dev-test-task to the main-test-task. */
 
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
 
 #define INSPECTOR_UART               huart6
 #define INSPECTED_UART               huart4
@@ -59,11 +59,11 @@
 #define INSPECTOR_TIM                htim1
 #define INSPECTED_TIM                htim2
 
-#define INSPECTOR_TIM_CHANNEL        TIM_CHANNEL_1
-#define INSPECTED_TIM_CHANNEL        TIM_CHANNEL_2
+#define INSPECTOR_TIM_CHANNEL        TIM_CHANNEL_1          /* Is used for Configuration*/
+#define INSPECTED_TIM_CHANNEL        TIM_CHANNEL_2          /* Is used for Configuration*/
 
-#define INSPECTOR_TIM_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_1
-#define INSPECTED_TIM_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_2
+#define INSPECTOR_TIM_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_1  /* Is used for Detection */
+#define INSPECTED_TIM_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_2  /* Is used for Detection */
 
 
 /*======================================================================================================================*/
@@ -107,18 +107,27 @@ TaskHandle_t xTesterTaskHandle;                   /* Handle to Tester      task.
 
 TaskHandle_t xDevTestTaskHandles[E_NUM_PERIPHS];  /* Handles to UART, SPI,I2C, ADC and Timer tasks.  -- Will be implemented in the future. */
 
-QueueHandle_t TestReqQueue;
-QueueHandle_t TestRespQueue;
-static SemaphoreHandle_t RespQueueMut;
+QueueHandle_t TestReqQueue;                       /* Queue of test requests.     Test Manager ◀▬▬▬ Network              */
+QueueHandle_t TestRespQueue;                      /* Queue of test responses.    Peripheral Tester ▬▬▬▶ Test Manager    */
+static SemaphoreHandle_t RespQueueMut;            /* Mutex for queue of responses. Because the responses are given from different tasks the mutex for accessing the queue of responses is required. */
 
 /*======================================================================================================================*/
 
+/* Distributes the given test request between the existing peripherals selected in the request.                         */
 void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F);
 
+/*  Forwards the request to selected peripheral.                                                                        */
 void ReqDevTest(DevTestInfo_s *DevTestInfo, PeriphType_e PeriphType);
 
 
 /*======================================================================================================================*/
+/*
+ * *************************************************************************************************************
+ **          Requests Responses Forwarding Procedures.
+ * *************************************************************************************************************
+ */
+
+/*----------------------------------------------------------------------------------------------------------------------*/
 /*    Sends request for test                                                                                            */
 /*    Test Manager <---- Network                                                                                        */
 void ReqForTest(TestData_s TestData, uint8_t TestPattern[])
@@ -129,8 +138,9 @@ void ReqForTest(TestData_s TestData, uint8_t TestPattern[])
   xQueueSend(TestReqQueue, &Message, pdMS_TO_TICKS(10));
  }
 
-/*======================================================================================================================*/
-/* Sends Test Response from peripheral-testing-task to the test manager                                                 */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*    Sends Test Response from peripheral-testing-task to the test manager                                              */
+/*    Peripheral Task  -----> Test Manager                                                                              */
 void SendTestResponse(bool Result, PeriphType_e PeriphType)
  {
   TestRespMesg_s Message;
@@ -143,6 +153,13 @@ void SendTestResponse(bool Result, PeriphType_e PeriphType)
 
 
 /*======================================================================================================================*/
+/*
+ * *************************************************************************************************************
+ **          Testing task Functions / Procedures.
+ * *************************************************************************************************************
+ */
+
+/*----------------------------------------------------------------------------------------------------------------------*/
 /*    Test Manager Task                                                                                                 */
 void TesterTask(void *pvParameters)
  {
@@ -199,8 +216,9 @@ void TesterTask(void *pvParameters)
  }
 
 
-/*======================================================================================================================*/
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Distributes the given test request between the existing peripherals selected in the request.                         */
+/* Checks which peripherals were selected for test in the request and forwards the request only to them.                */
 void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F)
  {
   uint8_t i;
@@ -212,10 +230,11 @@ void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F)
    }
  }
 
-/*======================================================================================================================*/
+/*----------------------------------------------------------------------------------------------------------------------*/
 
 DevTaskParams_s DevTaskParams[E_NUM_PERIPHS] = {0};
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Forwards the request to selected peripheral.                                                                        */
 void ReqDevTest(DevTestInfo_s *DevTestInfo, PeriphType_e PeriphType)
  {
   DevTestMesg_s Message;
@@ -498,7 +517,7 @@ bool TestADC(uint8_t NInt, int32_t TestVoltage)
      if(!TestResult) break;
      TestResult = xSemaphoreTake(ADCTestSem, pdMS_TO_TICKS(MaxTimeToWait));
      /* if(!TestResult) break;  --  No need to break the loop here because it is needed previously to run the function "HAL_ADC_Stop_DMA()" anyway. */
-     TestResult &= !HAL_ADC_Stop_DMA(&INSPECTED_ADC);  /* Here is needed to make anding to the previouse TestResult anyway to break the loop here if the test result was "false" before. */
+     TestResult &= !HAL_ADC_Stop_DMA(&INSPECTED_ADC);  /* Here is needed to make anding to the previous TestResult anyway to break the loop here if the test result was "false" before. */
      if(!TestResult) break;
      ADCVoltage = DIV_RND(ADCRoughData * VrefInt, MAX_ROUGH_VOLTAGE);
      TestResult = abs(ADCVoltage - TestVoltage) <= ADC_PERMITTED_ERROR;
@@ -576,7 +595,7 @@ bool TestTimer(uint8_t NInt, uint32_t TestTime)
   uint32_t MaxTimeToWait;
   if(TestTime <= 4)
    return false;
-  MaxTimeToWait = MAX(10, DIV_RND_UP(TestTime*4, 1000));  // Must be rechecked.
+  MaxTimeToWait = MAX(10, DIV_RND_UP(TestTime * 4, 1000));  // Must be rechecked.
   NPerPairs = 2*MAX(1, 1000/TestTime);
   xSemaphoreTake(TIMTestSem, 0);  /* Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt. */
 
@@ -727,8 +746,8 @@ void DevTestTask(void *pvParameters)
  *
  * *************************************************************************
  */
-
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Prepares the tester-tasks.                                                                                         */
 void TesterInit()
  {
   BaseType_t result;

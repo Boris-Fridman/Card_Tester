@@ -11,6 +11,13 @@
 static struct sockaddr_in dest_addr;
 static int sockfd;
 /*======================================================================================================================*/
+/*
+ * *************************************************************************************************************
+ **          Network Init Deinit Functions / Procedures
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Initilizes the network.                                                                                             */
 int InitNetwork()
  {
   bool NoPiping;
@@ -45,16 +52,26 @@ int InitNetwork()
   return 0;
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Closes network.                                                                                                     */
 void CloseNetwork()
  {
   close(sockfd);
  }
 
+/*======================================================================================================================*/
+/*
+ * *************************************************************************************************************
+ **          Network Send / Receive Functions / Procedures
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Sends command via network to the slave device.                                                                      */
 int SendCommandToNetwork(TestData_s const * const TestData, uint8_t TestPattern[])
  {
   uint8_t *Pack;
   size_t PackSizeNetto, PackSizeFull;
-  ssize_t result;
+  ssize_t result = 0;
   bool StdErrNoPiping, StdOutNoPiping;
   StdErrNoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
   StdOutNoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
@@ -75,12 +92,14 @@ int SendCommandToNetwork(TestData_s const * const TestData, uint8_t TestPattern[
       if(StdOutNoPiping)fprintf(stdout, "%s", TermGreen);
       printf("The message was sent successfully.  %ld bytes were sent.\n\r", result);
       if(StdOutNoPiping)fprintf(stdout, "%s", TermColorsReset);
+      result = 0;
      }
     else
      {
       if(StdOutNoPiping)fprintf(stdout, "%s", TermRed);
       printf("Error in sending.\n\r");
       if(StdOutNoPiping)fprintf(stdout, "%s", TermColorsReset);
+      result = -1;
      }
     free(Pack);
    }
@@ -89,11 +108,14 @@ int SendCommandToNetwork(TestData_s const * const TestData, uint8_t TestPattern[
     if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
     fprintf(stderr, "Cannot allocate the memory.\n\r");
     if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
+    result = -2;
    }
 
-  return 0;
+  return result;
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Waits for response for a while written in TimeOut value or infinittely if TimeOut is "0".                           */
 int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
  {
   struct timeval tv;
@@ -115,6 +137,7 @@ int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
     if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
     fprintf(stderr, "Error setting timeout\n\r");
     if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
+    return -3;
    }
 
 
@@ -142,10 +165,10 @@ int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
     if(StdErrNoPiping)fprintf(stderr, "%s", TermRed);
     fprintf(stderr, "Problem in receiving data\n\r");
     if(StdErrNoPiping)fprintf(stderr, "%s", TermColorsReset);
-    return -1;
+    return -2;
    }
 
-  return -1;
+  return -4;
  }
 
 /*======================================================================================================================*/

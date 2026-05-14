@@ -31,25 +31,25 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  13 .ARM.attributes 00000030  00000000  00000000  0001d1cc  2**0
                   CONTENTS, READONLY
- 14 .debug_info   00063624  00000000  00000000  0001d1fc  2**0
+ 14 .debug_info   00063634  00000000  00000000  0001d1fc  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_abbrev 0000e094  00000000  00000000  00080820  2**0
+ 15 .debug_abbrev 0000e074  00000000  00000000  00080830  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_loclists 00021e14  00000000  00000000  0008e8b4  2**0
+ 16 .debug_loclists 00021e14  00000000  00000000  0008e8a4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_aranges 00002fc8  00000000  00000000  000b06c8  2**0
+ 17 .debug_aranges 00002fc8  00000000  00000000  000b06b8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_rnglists 000030de  00000000  00000000  000b3690  2**0
+ 18 .debug_rnglists 000030de  00000000  00000000  000b3680  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_macro  000400e8  00000000  00000000  000b676e  2**0
+ 19 .debug_macro  000400e0  00000000  00000000  000b675e  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .debug_line   000611ef  00000000  00000000  000f6856  2**0
+ 20 .debug_line   000611eb  00000000  00000000  000f683e  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_str    00125a77  00000000  00000000  00157a45  2**0
+ 21 .debug_str    00125a77  00000000  00000000  00157a29  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .comment      00000043  00000000  00000000  0027d4bc  2**0
+ 22 .comment      00000043  00000000  00000000  0027d4a0  2**0
                   CONTENTS, READONLY
- 23 .debug_frame  00009540  00000000  00000000  0027d500  2**2
+ 23 .debug_frame  00009540  00000000  00000000  0027d4e4  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -500,7 +500,9 @@ uint32_t FindCRC(uint8_t * Data, uint8_t Length, uint32_t InitVal)
 
 0802062c <Add_CRC>:
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Appends to the end of the data array the calculated CRC from it. The length must include the place of the CRC.     */
+/* For example if the data has length 8 the length given as parameter must be 12 = 8 + 4. The CRC has 4 bytes of length.*/
 void Add_CRC(uint8_t buf[], size_t len)
  {
  802062c:	b538      	push	{r3, r4, r5, lr}
@@ -522,7 +524,10 @@ void Add_CRC(uint8_t buf[], size_t len)
  8020644:	ef45ab12 	.word	0xef45ab12
 
 08020648 <CRC_Correct>:
- 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Checks if the CRC is correct.                                                                                       */
+/*  For example if the given length is 12 the CRC checking will be made from the first 8 bytes                          */
+/*  and the result will be compaired to the last 4 bytes.                                                               */
 bool CRC_Correct(uint8_t buf[], size_t len)
  {
  8020648:	b538      	push	{r3, r4, r5, lr}
@@ -549,7 +554,10 @@ bool CRC_Correct(uint8_t buf[], size_t len)
  8020668:	ef45ab12 	.word	0xef45ab12
 
 0802066c <DecodeReqData>:
-
+/* Attention !!!                                                                                                        */
+/* The last parameter "TestPattern" is given as pointer to pointer to dynamically allocated memory.                     */
+/* That means that at the end of the program it must be freed by the procedure "FreeTestPattern()"                      */
+/* to avoid the memory leakage.                                                                                         */
 void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern)
  {
  802066c:	b570      	push	{r4, r5, r6, lr}
@@ -591,7 +599,7 @@ void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **T
  80206a4:	462a      	mov	r2, r5
  80206a6:	f104 010f 	add.w	r1, r4, #15
       /* At the end of the usage with the returned data the "**TestPattern" must be freed by the "FreeTestPattern()" procedure. */
-      //free(*TestPattern); Not in use. the "**TestPattern" must be freed by the "FreeTestPattern()" procedure by the user.
+      /* free(*TestPattern); Not in use. the "**TestPattern" must be freed by the "FreeTestPattern()" procedure by the user. */
      }
    }
 
@@ -603,8 +611,10 @@ void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **T
  80206b2:	bd70      	pop	{r4, r5, r6, pc}
 
 080206b4 <FreeTestPattern>:
-
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* This Procedure is used for freeing the "**TestPattern" reserved by the procedure "DecodeReqData()".                  */
+/* No need to check anything before running it because it checks automatically inside if the memory                     */
+/* is reserved and sets the pointer to NULL after freeing it.                                                           */
 void FreeTestPattern(uint8_t **TestPattern)
  {
  80206b4:	b510      	push	{r4, lr}
@@ -624,8 +634,10 @@ void FreeTestPattern(uint8_t **TestPattern)
  80206c4:	bd10      	pop	{r4, pc}
 
 080206c6 <EncodeRespData>:
-
-
+/* Encodes data for response to the parameter "**RespData".                                                             */
+/* Attention !!!                                                                                                        */
+/* The procedure allocates dynamic memory for to which the parameter "**RespDtata" points.                              */
+/* The freeing must be done by the "FreeRespData()".                                                                    */
 size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
  {
  80206c6:	b538      	push	{r3, r4, r5, lr}
@@ -669,6 +681,10 @@ size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
 
 080206f2 <FreeRespData>:
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Frees the "**RespData" allocated by the procedure "EncodeRespData()".                                                */
+/* No need to check the condition. It checks if the pointer is not NULL and only in this case it frees the memory.      */
+/* After freeng the memory it sets the pointer to NULL.                                                                 */
 void FreeRespData(uint8_t **RespData)
  80206f2:	f7ff bfdf 	b.w	80206b4 <FreeTestPattern>
 	...
@@ -816,16 +832,16 @@ __STATIC_FORCEINLINE void __disable_irq(void)
 void AdjustIntVectTable()  /* Adjusts Interrupt Vector Table MCU pointer according to code location in flash memory. */
  {
   __disable_irq();
-#ifdef __GNUC__     // In case of GCC compiler
+#ifdef __GNUC__     /* In case of GCC compiler */
   extern void *g_pfnVectors[];
-  SCB->VTOR = (uint32_t)g_pfnVectors;  // In case of GCC compiler
+  SCB->VTOR = (uint32_t)g_pfnVectors;  /* In case of GCC compiler */
  80207aa:	4a02      	ldr	r2, [pc, #8]	@ (80207b4 <AdjustIntVectTable+0xc>)
  80207ac:	4b02      	ldr	r3, [pc, #8]	@ (80207b8 <AdjustIntVectTable+0x10>)
  80207ae:	609a      	str	r2, [r3, #8]
   __ASM volatile ("cpsie i" : : : "memory");
  80207b0:	b662      	cpsie	i
-
-  //__set_MSP(*(__IO uint32_t*)SCB->VTOR);
+  SCB->VTOR = (uint32_t)&__Vectors;  /* In case of Keil compiler  -- Not tested yet. */
+#endif
 
   __enable_irq();
 
@@ -50530,7 +50546,7 @@ void sys_arch_unprotect(sys_prot_t pval)
 
 
 /*======================================================================================================================*/
-
+/*  Prepares the network task.                                                                                          */
 void NetworkInit()
  {
  803407c:	b507      	push	{r0, r1, r2, lr}
@@ -50555,8 +50571,6 @@ void NetworkInit()
     for(;;);
  8034098:	e7fe      	b.n	8034098 <NetworkInit+0x1c>
    }
-
-
 
   result = xTaskCreate(NetworkTask, "Network Task", xNETWORK_STACK_SIZE, NULL, xNETWORK_PRIORITY, &xNewtworkTaskHandle);
  803409a:	4b0e      	ldr	r3, [pc, #56]	@ (80340d4 <NetworkInit+0x58>)
@@ -50596,8 +50610,8 @@ void NetworkInit()
 080340e4 <Wait_for_DHCP>:
 
 
-
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Waits until the network connection is established.                                                                  */
 void Wait_for_DHCP(void)
  {
  80340e4:	b510      	push	{r4, lr}
@@ -50633,7 +50647,8 @@ void Wait_for_DHCP(void)
 
 0803410c <SendResponse>:
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Sends response via the network.                                                                                     */
 void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, TestResult_s TestResult)
  {
  803410c:	b082      	sub	sp, #8
@@ -50663,7 +50678,7 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
     buf = netbuf_new();
  803412a:	f7f7 f9f1 	bl	802b510 <netbuf_new>
  803412e:	4606      	mov	r6, r0
-    netbuf_ref(buf, Pack, Len);  //  netbuf_ref(buf, Pack, sizeof(TestResult_s) + sizeof(uint32_t));
+    netbuf_ref(buf, Pack, Len);
  8034130:	fa1f f288 	uxth.w	r2, r8
  8034134:	9903      	ldr	r1, [sp, #12]
  8034136:	f7f7 fa09 	bl	802b54c <netbuf_ref>
@@ -50673,7 +50688,7 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
  803413e:	4631      	mov	r1, r6
  8034140:	4638      	mov	r0, r7
  8034142:	f7f6 fa57 	bl	802a5f4 <netconn_sendto>
-    netbuf_delete(buf); /* Freeing buffer after sending */
+    netbuf_delete(buf);                       /* Freeing buffer after sending */
  8034146:	4630      	mov	r0, r6
  8034148:	f7f7 f9ee 	bl	802b528 <netbuf_delete>
     ip_str = ip4addr_ntoa(ip4addr);
@@ -50799,19 +50814,19 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
           FreeTestPattern(&TestPattern);
  803421e:	a807      	add	r0, sp, #28
  8034220:	f7ec fa48 	bl	80206b4 <FreeTestPattern>
-          TestResult_s TestResult = { .Test_ID = TestData.Test_ID, .Periph_B_F = TestData.Periph_B_F, .TestResult =  E_TEST_FAILED}; // Defiend temperary. will be moved to other place.
+          TestResult_s TestResult = { .Test_ID = TestData.Test_ID, .Periph_B_F = TestData.Periph_B_F, .TestResult =  E_TEST_FAILED};
  8034224:	9b0a      	ldr	r3, [sp, #40]	@ 0x28
-          if(pdPASS == xQueueReceive(TestReportQueue, &TestResult, portMAX_DELAY))  // In the future will be added limmited timout.
+          if(pdPASS == xQueueReceive(TestReportQueue, &TestResult, portMAX_DELAY))  // In the future will be added limited timeout.
  8034226:	f04f 32ff 	mov.w	r2, #4294967295	@ 0xffffffff
  803422a:	a908      	add	r1, sp, #32
-          TestResult_s TestResult = { .Test_ID = TestData.Test_ID, .Periph_B_F = TestData.Periph_B_F, .TestResult =  E_TEST_FAILED}; // Defiend temperary. will be moved to other place.
+          TestResult_s TestResult = { .Test_ID = TestData.Test_ID, .Periph_B_F = TestData.Periph_B_F, .TestResult =  E_TEST_FAILED};
  803422c:	9308      	str	r3, [sp, #32]
  803422e:	f89d 3034 	ldrb.w	r3, [sp, #52]	@ 0x34
  8034232:	f88d 5025 	strb.w	r5, [sp, #37]	@ 0x25
  8034236:	f88d 3024 	strb.w	r3, [sp, #36]	@ 0x24
  803423a:	23ff      	movs	r3, #255	@ 0xff
  803423c:	f88d 3026 	strb.w	r3, [sp, #38]	@ 0x26
-          if(pdPASS == xQueueReceive(TestReportQueue, &TestResult, portMAX_DELAY))  // In the future will be added limmited timout.
+          if(pdPASS == xQueueReceive(TestReportQueue, &TestResult, portMAX_DELAY))  // In the future will be added limited timeout.
  8034240:	4b16      	ldr	r3, [pc, #88]	@ (803429c <NetworkTask+0x11c>)
  8034242:	6818      	ldr	r0, [r3, #0]
  8034244:	f7f4 fe39 	bl	8028eba <xQueueReceive>
@@ -50859,6 +50874,8 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
 
 080342ac <GiveResults>:
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Gives result to the "Network.c/h" for sending the answer back.                                                      */
 void GiveResults(PeriphBitField_s DevResults, PeriphBitField_s DevsUnderTest, uint32_t Test_ID)
  {
  80342ac:	b513      	push	{r0, r1, r4, lr}
@@ -50898,10 +50915,6 @@ void GiveResults(PeriphBitField_s DevResults, PeriphBitField_s DevsUnderTest, ui
   xQueueSend(TestReportQueue, &TestResult, pdMS_TO_TICKS(10));
  80342d0:	2300      	movs	r3, #0
  80342d2:	f7f4 fc4f 	bl	8028b74 <xQueueGenericSend>
-  // Here must be implemented connection parameters.
-  //  .....  *****  .....
-  // And than the next line must be uncommented.
-  //SendResponse(conn, &addr, port, TestResult);                       // Is commented out due to connection for back response is not implemented yet.
  }
  80342d6:	b002      	add	sp, #8
  80342d8:	bd10      	pop	{r4, pc}
@@ -50910,7 +50923,7 @@ void GiveResults(PeriphBitField_s DevResults, PeriphBitField_s DevsUnderTest, ui
 
 080342e0 <ReqForTest>:
 
-/*======================================================================================================================*/
+/*----------------------------------------------------------------------------------------------------------------------*/
 /*    Sends request for test                                                                                            */
 /*    Test Manager <---- Network                                                                                        */
 void ReqForTest(TestData_s TestData, uint8_t TestPattern[])
@@ -50947,8 +50960,9 @@ void ReqForTest(TestData_s TestData, uint8_t TestPattern[])
 
 0803431c <SendTestResponse>:
 
-/*======================================================================================================================*/
-/* Sends Test Response from peripheral-testing-task to the test manager                                                 */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*    Sends Test Response from peripheral-testing-task to the test manager                                              */
+/*    Peripheral Task  -----> Test Manager                                                                              */
 void SendTestResponse(bool Result, PeriphType_e PeriphType)
  {
  803431c:	b513      	push	{r0, r1, r4, lr}
@@ -50985,10 +50999,10 @@ void SendTestResponse(bool Result, PeriphType_e PeriphType)
  8034354:	200110c8 	.word	0x200110c8
 
 08034358 <ReqDevTest>:
-/*======================================================================================================================*/
 
 DevTaskParams_s DevTaskParams[E_NUM_PERIPHS] = {0};
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Forwards the request to selected peripheral.                                                                        */
 void ReqDevTest(DevTestInfo_s *DevTestInfo, PeriphType_e PeriphType)
  {
  8034358:	b513      	push	{r0, r1, r4, lr}
@@ -51842,7 +51856,7 @@ bool TestADC(uint8_t NInt, int32_t TestVoltage)
  803489e:	f8d8 0000 	ldr.w	r0, [r8]
  80348a2:	f7f4 fbaf 	bl	8029004 <xQueueSemaphoreTake>
  80348a6:	4682      	mov	sl, r0
-     TestResult &= !HAL_ADC_Stop_DMA(&INSPECTED_ADC);  /* Here is needed to make anding to the previouse TestResult anyway to break the loop here if the test result was "false" before. */
+     TestResult &= !HAL_ADC_Stop_DMA(&INSPECTED_ADC);  /* Here is needed to make anding to the previous TestResult anyway to break the loop here if the test result was "false" before. */
  80348a8:	480b      	ldr	r0, [pc, #44]	@ (80348d8 <TestADC+0x140>)
  80348aa:	f7ed fc65 	bl	8022178 <HAL_ADC_Stop_DMA>
      if(!TestResult) break;
@@ -51951,18 +51965,18 @@ bool TestTimer(uint8_t NInt, uint32_t TestTime)
   return TestResult;
  }
  803493e:	e8bd 8ff8 	ldmia.w	sp!, {r3, r4, r5, r6, r7, r8, r9, sl, fp, pc}
-  MaxTimeToWait = MAX(10, DIV_RND_UP(TestTime*4, 1000));  // Must be rechecked.
+  MaxTimeToWait = MAX(10, DIV_RND_UP(TestTime * 4, 1000));  // Must be rechecked.
  8034942:	008e      	lsls	r6, r1, #2
  8034944:	f242 730f 	movw	r3, #9999	@ 0x270f
   xSemaphoreTake(TIMTestSem, 0);  /* Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt. */
  8034948:	f8df 80c4 	ldr.w	r8, [pc, #196]	@ 8034a10 <TestTimer+0xe0>
-  MaxTimeToWait = MAX(10, DIV_RND_UP(TestTime*4, 1000));  // Must be rechecked.
+  MaxTimeToWait = MAX(10, DIV_RND_UP(TestTime * 4, 1000));  // Must be rechecked.
  803494c:	f206 36e7 	addw	r6, r6, #999	@ 0x3e7
   NPerPairs = 2*MAX(1, 1000/TestTime);
  8034950:	4a2c      	ldr	r2, [pc, #176]	@ (8034a04 <TestTimer+0xd4>)
   xSemaphoreTake(TIMTestSem, 0);  /* Setting semaphore to taken state without any waiting to ensure that after transferring the program will wait for interrupt. */
  8034952:	f8d8 0000 	ldr.w	r0, [r8]
-  MaxTimeToWait = MAX(10, DIV_RND_UP(TestTime*4, 1000));  // Must be rechecked.
+  MaxTimeToWait = MAX(10, DIV_RND_UP(TestTime * 4, 1000));  // Must be rechecked.
  8034956:	429e      	cmp	r6, r3
  8034958:	bf8a      	itet	hi
  803495a:	f44f 737a 	movhi.w	r3, #1000	@ 0x3e8
@@ -52236,8 +52250,8 @@ void DevTestTask(void *pvParameters)
 08034b54 <TesterInit>:
  * *************************************************************************
  */
-
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*   Prepares the tester-tasks.                                                                                         */
 void TesterInit()
  {
  8034b54:	e92d 47f0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, lr}

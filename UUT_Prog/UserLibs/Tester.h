@@ -34,7 +34,7 @@
 void ReqForTest(TestData_s TestData, uint8_t TestPattern[]);
 
 /**
- * @brief Preperes the testertasks.
+ * @brief Prepares the tester-tasks.
  *
  * @code{c}
  * void TesterInit(void);

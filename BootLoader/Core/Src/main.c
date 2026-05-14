@@ -71,23 +71,6 @@ void StartApplication();
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-
-
-//
-// // Function to write the magic number
-//void SetMagicNumber(uint32_t magic) {
-//    // Cast the address to a volatile pointer and write the value
-//    *(__IO uint32_t*)MAGIC_NUMBER_ADDR = magic;
-//}
-//
-// // Function to read the magic number
-//uint32_t GetMagicNumber(void) {
-//    return *(__IO uint32_t*)MAGIC_NUMBER_ADDR;
-//}
-//
-
-
-
 /* USER CODE END 0 */
 
 /**
@@ -155,14 +138,14 @@ int main(void)
        *  Attention !!!!
        * The main application can be run only before the "HAL_Init()" that means before the starting the bootloader mode at all.
        * After the running the procedure "HAL_Init()" the application running is impossible regardless anything even after "HAL_DeInit()".
-       * Due to this reason the main application running is done by making setting the magic number and than making the softreset.
-       * The reset reason is not enough to decide if to run the main program or bootloader itself because the softreset is used for
+       * Due to this reason the main application running is done by making setting the magic number and than making the soft reset.
+       * The reset reason is not enough to decide if to run the main program or bootloader itself because the soft reset is used for
        * making OTA-Update in case the main application received command to reboot the device for making OTA-Update.
-       * So by softupdate is is not possible to know if the reset was done for for making the OTA-Update or for running the main
+       * So by soft update is is not possible to know if the reset was done for for making the OTA-Update or for running the main
        * program after OTA-Update itself.
        */
       MagicNumberVar = MAGIC_NUMBER;
-      NVIC_SystemReset();  // Soft Reset
+      NVIC_SystemReset();  /* Soft Reset */
      }
 
   }
