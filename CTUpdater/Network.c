@@ -136,26 +136,17 @@ void CloseNetwork()
 int SendCommandToNetwork(TestData_s const * const TestData, uint8_t TestPattern[])
  {
   uint8_t *Pack;
-  size_t PackSizeNetto, PackSizeFull;
+  size_t PackSize;
   ssize_t result = 0;
   bool StdErrNoPiping, StdOutNoPiping;
   StdErrNoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
   StdOutNoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
 
-  PackSizeFull = EncodeReqData(TestData, TestPattern, &Pack);
-
-  // PackSizeNetto = sizeof(TestData_s) + TestData->Bit_Pattern_Length;
-  // PackSizeFull = PackSizeNetto + CRC_SIZE;
-  // Pack = calloc(PackSizeFull, sizeof(uint8_t));
-  if(PackSizeFull > 0)//if(Pack)
+  PackSize = EncodeReqData(TestData, TestPattern, &Pack);
+  if(PackSize > 0)
    {
-    // memcpy(Pack, TestData, sizeof(TestData_s));
-    // memcpy(Pack + sizeof(TestData_s), TestPattern, TestData->Bit_Pattern_Length);
-
-    // Add_CRC(Pack, PackSizeFull);
-
-    result = sendto(sockfd, Pack, PackSizeFull, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
+    result = sendto(sockfd, Pack, PackSize, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
     if(result >= 0 )
      {
       if(StdOutNoPiping)fprintf(stdout, "%s", TermGreen);

@@ -119,7 +119,7 @@ void NetworkTask(void *pvParameters)
 
           ReqForTest(TestData, TestPattern);
 
-          FreeData(&TestPattern);//FreeTestPattern(&TestPattern);
+          FreeData(&TestPattern);
 
           TestResult_s TestResult = { .Test_ID = TestData.Test_ID, .Periph_B_F = TestData.Periph_B_F, .TestResult =  E_TEST_FAILED};
           if(pdPASS == xQueueReceive(TestReportQueue, &TestResult, portMAX_DELAY))  // In the future will be added limited timeout.
@@ -180,7 +180,7 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
     port = ipport;
     rtprintf("%sThe response was sent to %s:%d\n\r%s", TermYello, ip_str, port, TermColorsReset);
 
-    FreeData(&Pack);  //  FreeRespData(&Pack);
+    FreeData(&Pack);
    }
 
 

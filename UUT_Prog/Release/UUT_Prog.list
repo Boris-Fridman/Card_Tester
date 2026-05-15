@@ -31,23 +31,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  13 .ARM.attributes 00000030  00000000  00000000  0001d1cc  2**0
                   CONTENTS, READONLY
- 14 .debug_info   00063755  00000000  00000000  0001d1fc  2**0
+ 14 .debug_info   00063756  00000000  00000000  0001d1fc  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_abbrev 0000e082  00000000  00000000  00080951  2**0
+ 15 .debug_abbrev 0000e082  00000000  00000000  00080952  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_loclists 00021ea5  00000000  00000000  0008e9d3  2**0
+ 16 .debug_loclists 00021ea5  00000000  00000000  0008e9d4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_aranges 00002fd0  00000000  00000000  000b0878  2**0
+ 17 .debug_aranges 00002fd0  00000000  00000000  000b0879  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_rnglists 000030e4  00000000  00000000  000b3848  2**0
+ 18 .debug_rnglists 000030e4  00000000  00000000  000b3849  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_macro  000409c2  00000000  00000000  000b692c  2**0
+ 19 .debug_macro  000409c2  00000000  00000000  000b692d  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .debug_line   00061fe1  00000000  00000000  000f72ee  2**0
+ 20 .debug_line   00061fe1  00000000  00000000  000f72ef  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_str    00125aa6  00000000  00000000  001592cf  2**0
+ 21 .debug_str    00125aa4  00000000  00000000  001592d0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .comment      00000043  00000000  00000000  0027ed75  2**0
+ 22 .comment      00000043  00000000  00000000  0027ed74  2**0
                   CONTENTS, READONLY
  23 .debug_frame  00009568  00000000  00000000  0027edb8  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
@@ -556,7 +556,7 @@ bool CRC_Correct(uint8_t buf[], size_t len)
 0802066c <DecodeReqData>:
 /* Attention !!!                                                                                                        */
 /* The last parameter "TestPattern" is given as pointer to pointer to dynamically allocated memory.                     */
-/* That means that at the end of the program it must be freed by the procedure "FreeTestPattern()"                      */
+/* That means that at the end of the program it must be freed by the procedure "FreeData()"                             */
 /* to avoid the memory leakage.                                                                                         */
 bool DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern)
  {
@@ -610,7 +610,7 @@ bool DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **T
 /* Encodes data for response to the parameter "**RespData".                                                             */
 /* Attention !!!                                                                                                        */
 /* The procedure allocates dynamic memory for to which the parameter "**RespDtata" points.                              */
-/* The freeing must be done by the "FreeRespData()".                                                                    */
+/* The freeing must be done by the "FreeData()".                                                                        */
 size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
  {
  80206b4:	b538      	push	{r3, r4, r5, lr}
@@ -653,10 +653,10 @@ size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
  80206de:	bd38      	pop	{r3, r4, r5, pc}
 
 080206e0 <FreeData>:
-//  }
-
-/*----------------------------------------------------------------------------------------------------------------------*/
-
+/* This Procedure is used for freeing the "**Data" reserved by one of the procedures                                    */
+/* "DecodeReqData()", "DecodeReqData()" or "EncodeReqData()".                                                           */
+/* No need to check anything before running it because it checks automatically inside if the memory                     */
+/* is reserved and sets the pointer to NULL after freeing it.                                                           */
 void FreeData(uint8_t **Data)
  {
  80206e0:	b510      	push	{r4, lr}
@@ -50692,7 +50692,7 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
  803415c:	4807      	ldr	r0, [pc, #28]	@ (803417c <SendResponse+0x70>)
  803415e:	f7ec fae5 	bl	802072c <rtprintf>
 
-    FreeData(&Pack);  //  FreeRespData(&Pack);
+    FreeData(&Pack);
  8034162:	a803      	add	r0, sp, #12
  8034164:	f7ec fabc 	bl	80206e0 <FreeData>
    }
@@ -50797,7 +50797,7 @@ void SendResponse(struct netconn *conn, ip4_addr_t *ip4addr, uint16_t ipport, Te
  8034214:	9300      	str	r3, [sp, #0]
  8034216:	e896 000f 	ldmia.w	r6, {r0, r1, r2, r3}
  803421a:	f000 f861 	bl	80342e0 <ReqForTest>
-          FreeData(&TestPattern);//FreeTestPattern(&TestPattern);
+          FreeData(&TestPattern);
  803421e:	a807      	add	r0, sp, #28
  8034220:	f7ec fa5e 	bl	80206e0 <FreeData>
           TestResult_s TestResult = { .Test_ID = TestData.Test_ID, .Periph_B_F = TestData.Periph_B_F, .TestResult =  E_TEST_FAILED};

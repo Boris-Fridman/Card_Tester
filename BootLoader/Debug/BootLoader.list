@@ -33,9 +33,9 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  14 .ARM.attributes 00000030  00000000  00000000  0001c21c  2**0
                   CONTENTS, READONLY
- 15 .debug_info   0002504e  00000000  00000000  0001c24c  2**0
+ 15 .debug_info   0002504f  00000000  00000000  0001c24c  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_abbrev 00006f27  00000000  00000000  0004129a  2**0
+ 16 .debug_abbrev 00006f27  00000000  00000000  0004129b  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  17 .debug_aranges 00001a80  00000000  00000000  000481c8  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
@@ -45,9 +45,9 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  20 .debug_line   0002dca0  00000000  00000000  00080c43  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_str    001029c6  00000000  00000000  000ae8e3  2**0
+ 21 .debug_str    001029c4  00000000  00000000  000ae8e3  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .comment      00000043  00000000  00000000  001b12a9  2**0
+ 22 .comment      00000043  00000000  00000000  001b12a7  2**0
                   CONTENTS, READONLY
  23 .debug_frame  00006f24  00000000  00000000  001b12ec  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
@@ -618,7 +618,7 @@ bool CRC_Correct(uint8_t buf[], size_t len)
 080006f0 <DecodeReqData>:
 /* Attention !!!                                                                                                        */
 /* The last parameter "TestPattern" is given as pointer to pointer to dynamically allocated memory.                     */
-/* That means that at the end of the program it must be freed by the procedure "FreeTestPattern()"                      */
+/* That means that at the end of the program it must be freed by the procedure "FreeData()"                             */
 /* to avoid the memory leakage.                                                                                         */
 bool DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern)
  {
@@ -689,7 +689,7 @@ bool DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **T
 /* Encodes data for response to the parameter "**RespData".                                                             */
 /* Attention !!!                                                                                                        */
 /* The procedure allocates dynamic memory for to which the parameter "**RespDtata" points.                              */
-/* The freeing must be done by the "FreeRespData()".                                                                    */
+/* The freeing must be done by the "FreeData()".                                                                        */
 size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
  {
  8000754:	b580      	push	{r7, lr}
@@ -744,10 +744,10 @@ size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
  80007a2:	bd80      	pop	{r7, pc}
 
 080007a4 <FreeData>:
-//  }
-
-/*----------------------------------------------------------------------------------------------------------------------*/
-
+/* This Procedure is used for freeing the "**Data" reserved by one of the procedures                                    */
+/* "DecodeReqData()", "DecodeReqData()" or "EncodeReqData()".                                                           */
+/* No need to check anything before running it because it checks automatically inside if the memory                     */
+/* is reserved and sets the pointer to NULL after freeing it.                                                           */
 void FreeData(uint8_t **Data)
  {
  80007a4:	b580      	push	{r7, lr}
@@ -51775,7 +51775,7 @@ void UDPReceiveCB(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_
  8014094:	f107 0320 	add.w	r3, r7, #32
  8014098:	cb0f      	ldmia	r3, {r0, r1, r2, r3}
  801409a:	f7ff fdb3 	bl	8013c04 <BurnData>
-    FreeData(&TestPattern);  //  FreeTestPattern(&TestPattern);
+    FreeData(&TestPattern);
  801409e:	f107 031c 	add.w	r3, r7, #28
  80140a2:	4618      	mov	r0, r3
  80140a4:	f7ec fb7e 	bl	80007a4 <FreeData>
@@ -51820,7 +51820,7 @@ void UDPReceiveCB(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_
       pbuf_free(p_reply);
  80140f0:	6b38      	ldr	r0, [r7, #48]	@ 0x30
  80140f2:	f7f3 fbe1 	bl	80078b8 <pbuf_free>
-      FreeData(&Pack);  //  FreeRespData(&Pack);
+      FreeData(&Pack);
  80140f6:	f107 0310 	add.w	r3, r7, #16
  80140fa:	4618      	mov	r0, r3
  80140fc:	f7ec fb52 	bl	80007a4 <FreeData>

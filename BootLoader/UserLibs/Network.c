@@ -47,7 +47,7 @@ void UDPReceiveCB(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_
 
     DecodeReqData(p->payload, p->len, &TestData, &TestPattern);
     BurnData(TestData, TestPattern, &TestResult);
-    FreeData(&TestPattern);  //  FreeTestPattern(&TestPattern);
+    FreeData(&TestPattern);
 
     Len = EncodeRespData(&TestResult, &Pack);
 
@@ -59,7 +59,7 @@ void UDPReceiveCB(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_
       memcpy(p_reply->payload, Pack, Len);
       udp_sendto(pcb, p_reply, addr, port); // Send to sender's IP/Port
       pbuf_free(p_reply);
-      FreeData(&Pack);  //  FreeRespData(&Pack);
+      FreeData(&Pack);
      }
 
     /* Freeing received pbuf p. */

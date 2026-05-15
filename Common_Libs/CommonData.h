@@ -216,6 +216,28 @@ bool CRC_Correct(uint8_t buf[], size_t len);
 
 /*======================================================================================================================*/
 
+
+/**
+ * @brief
+ * This function encodes the packet received from network.                                     
+ * Attention !!!                                                                               
+ * The last parameter "ReqData" is given as pointer to pointer to dynamically allocated memory.
+ * That means that at the end of the program it must be freed by the procedure "FreeData()"    
+ * to avoid the memory leakage.                                                                
+ *
+ * @code
+ * ssize_t EncodeReqData(TestData_s const * const TestData, uint8_t TestPattern[], uint8_t **ReqData);
+ * @code
+ *
+ * @param TestData     The pointer in memory pattern for the data for testing.
+ *
+ * @param TestPattern  The pointer to the test pattern that must be added to the data of NULL if the pattern doesn't exist.
+ *
+ * @param ReqData      The pointer to pointer to the encoded data thet will be set to the new reserved memory to which the data will be copied.
+ *                     Must be freed at the end of usage by the procedure "FreeData()" to prevent the memory leakage.
+ *
+ * @return             Thelength of data if encoded successfully or "0" if failed.
+ */
 ssize_t EncodeReqData(TestData_s const * const TestData, uint8_t TestPattern[], uint8_t **ReqData);
 
 /**
@@ -223,7 +245,7 @@ ssize_t EncodeReqData(TestData_s const * const TestData, uint8_t TestPattern[], 
  * This function decodes the packet received from network.
  * Attention !!!
  * The last parameter "TestPattern" is given as pointer to pointer to dynamically allocated memory.
- * That means that at the end of the program it must be freed by the procedure "FreeTestPattern()" to avoid the memory leakage.
+ * That means that at the end of the program it must be freed by the procedure "FreeData()" to avoid the memory leakage.
  *
  * @code
  * void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern);
@@ -236,7 +258,7 @@ ssize_t EncodeReqData(TestData_s const * const TestData, uint8_t TestPattern[], 
  * @param TestData     The The data extracted from the packet. given as the structure "TestData_s".
  *
  * @param TestPattern  The pattern for testing the data. Is given as the pointer to pointer to start of the data.
- *                     Must be freed at the end of usage by the procedure "FreeTestPattern()" to prevent the memory leakage.
+ *                     Must be freed at the end of usage by the procedure "FreeData()" to prevent the memory leakage.
  * 
  * @return "true" if the data was decoded successfully. "false" otherwise.
  */
@@ -245,26 +267,10 @@ bool DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **T
 
 /**
  * @brief
- * This Procedure is used for freeing the "**TestPattern" reserved by the procedure "DecodeReqData()".
- * No need to check anything before running it because it checks automatically inside if the memory
- * is reserved and sets the pointer to NULL after freeing it.
- *
- * @code
- * FreeTestPattern(uint8_t **TestPattern);
- * @code
- *
- * @param TestPattern   The pointer to data reserved by the "DecodeReqData()" procedure that must be freed.
- *                      After freeing it will be set to NULL.
- *
- */
-//void FreeTestPattern(uint8_t **TestPattern);
-
-/**
- * @brief
  * Encodes data for response to the parameter "**RespData".
  * Attention !!!
  * The procedure allocates dynamic memory for to which the parameter "**RespDtata" points.
- * The freeing must be done by the "FreeRespData()".
+ * The freeing must be done by the "FreeData()".
  *
  * @code
  * size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData);
@@ -272,31 +278,45 @@ bool DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **T
  *
  * @param TestResult   Contains the Test Result answer that must be encoded for giving the response.
  *
- * @param RespData     The encoded data for sending via the network. Must be freed after usage by the procedure "FreeRespData()".
- *
+ * @param RespData     The encoded data for sending via the network. Must be freed after usage by the procedure "FreeData()".
+ * 
+ * @return Length of the RespData if the encoding was success or "0" if not.
  */
 size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData);
 
 
+/**
+ * @brief
+ * Decodes data for response to the parameter "**ResultData".
+ *
+ * @code
+ * bool DecodeRespData(uint8_t Data[], size_t Len, TestResult_s *ResultData);
+ * @code
+ *
+ * @param Data         The data for decoding.
+ *
+ * @param Len          The length of the data.
+ * 
+ * @param ResultData   The pointer in memory for decoded data. The memory must be allready reserved.
+ * 
+ * @return             "true" if success or "false" if failed.
+ */
 bool DecodeRespData(uint8_t Data[], size_t Len, TestResult_s *ResultData);
+
+
 
 /**
  * @brief
- * Frees the "**RespData" allocated by the procedure "EncodeRespData()".
+ * Frees the "**Data" allocated by by one of the procedures "DecodeReqData()", "DecodeReqData()" or "EncodeReqData()". 
  * No need to check the condition. It checks if the pointer is not NULL and only in this case it frees the memory.
  * After freeng the memory it sets the pointer to NULL.
  *
  * @code
- * void FreeRespData(uint8_t **RespData);
+ * void FreeData(uint8_t **Data);
  * @code
  *
- * @param RespData  The pointer to pointer to the dynamically allocated memory for freeing. *
- *
+ * @param Data  The pointer to pointer to the dynamically allocated memory for freeing. *
  */
-//void FreeRespData(uint8_t **RespData);
-
-
-
 void FreeData(uint8_t **Data);
 
 
