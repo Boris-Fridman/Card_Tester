@@ -46,8 +46,16 @@ SectorAddr_s const SectorsAddr[FLASH_SECTOR_TOTAL] =
 
 /*======================================================================================================================*/
 #ifdef USE_FREERTOS
+/*
+ * *************************************************************************************************************
+ **          RTOS Printing without mixing Functions / Procedures
+ * *************************************************************************************************************
+ */
+
 static SemaphoreHandle_t PrintfMut;
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Initializes mutexes used by the function "rtprintf()".                                                              */
 void InitRTPrintf()
  {
   PrintfMut = xSemaphoreCreateMutex();
@@ -60,7 +68,8 @@ void InitRTPrintf()
  }
 
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Is a part of the function "rtprintf()".                                                                             */
 int	vrtprintf(const char *format, va_list args)
  {
   int result;
@@ -68,6 +77,9 @@ int	vrtprintf(const char *format, va_list args)
   return result;
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  The function is similar to "printf()" but it is using the internal mutex to prevent print-mixing                    */
+/*  when two or more tasks try to print messages at the same time.                                                      */
 int	rtprintf(const char *format, ...)
  {
   int result;
@@ -82,7 +94,14 @@ int	rtprintf(const char *format, ...)
 #endif
 
 /*======================================================================================================================*/
-
+/*
+ * *************************************************************************************************************
+ **          Printing to UART Function
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Is used for sending characters to the required UART port (huart3) while calling the standard output functions       */
+/*  as "printf()", "putch()" or "puts()".                                                                               */
 int _write(int file, char *ptr, int len)
  {
   HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len - 1, HAL_MAX_DELAY);
@@ -98,7 +117,14 @@ return len;
 }
 
 /*======================================================================================================================*/
+/*
+ * *************************************************************************************************************
+ **          Adjusting Interrupt vector table Procedure
+ * *************************************************************************************************************
+ */
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Adjusts Interrupt Vector Table MCU pointer according to code location in flash memory.                              */
 void AdjustIntVectTable()  /* Adjusts Interrupt Vector Table MCU pointer according to code location in flash memory. */
  {
   __disable_irq();
@@ -123,6 +149,8 @@ void AdjustIntVectTable()  /* Adjusts Interrupt Vector Table MCU pointer accordi
 
 uint8_t RestFlags[] = {RCC_FLAG_PORRST, RCC_FLAG_BORRST, RCC_FLAG_IWDGRST, RCC_FLAG_WWDGRST, RCC_FLAG_SFTRST, RCC_FLAG_PINRST, RCC_FLAG_LSIRDY, RCC_FLAG_LPWRRST};
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  The function checks the reason of reset at startup.                                                                 */
 ResetReason_e CheckResetReason()
  {
   ResetReason_e i;
@@ -137,8 +165,11 @@ ResetReason_e CheckResetReason()
 
 
 /*======================================================================================================================*/
-
-
+/*
+ * *************************************************************************************************************
+ **          Flash saving / loading  Functions / Procedures
+ * *************************************************************************************************************
+ */
 
 #define CODE_SIZE_KB (*((uint16_t*)FLASHSIZE_BASE))
 
@@ -146,11 +177,15 @@ ResetReason_e CheckResetReason()
  //FLASHSIZE_BASE
  static MemConf_s MemConfig = {0};
 
+ /*----------------------------------------------------------------------------------------------------------------------*/
+/*  Loads the program configuration saved in the flash memory.                                                           */
 void LoadConf()
  {
   MemConfig = *(MemConf_s *)(SectorsAddr[FLASH_CONFIG_SECTOR].Start);
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Returns configuration saved in the flash memory.                                                                    */
 void SaveConf()
  {
   uint32_t NumBlocks, i;
@@ -214,13 +249,16 @@ void SaveConf()
 
 
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Returns configuration saved in the flash memory.                                                                    */
 void GetBLConf(BL_Conf_s *BlConf)
  {
   LoadConf();
   *BlConf = MemConfig.BootLoaderConfig;
  }
  
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Saves Configuration to the flash memory.                                                                            */
 void SetBLConf(BL_Conf_s BlConf)
  {
   MemConfig.BootLoaderConfig = BlConf;

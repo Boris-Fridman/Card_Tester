@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include <netdb.h>
 
 /*======================================================================================================================*/
 
@@ -216,6 +216,8 @@ bool CRC_Correct(uint8_t buf[], size_t len);
 
 /*======================================================================================================================*/
 
+ssize_t EncodeReqData(TestData_s const * const TestData, uint8_t TestPattern[], uint8_t **ReqData);
+
 /**
  * @brief
  * This function decodes the packet received from network.
@@ -235,8 +237,11 @@ bool CRC_Correct(uint8_t buf[], size_t len);
  *
  * @param TestPattern  The pattern for testing the data. Is given as the pointer to pointer to start of the data.
  *                     Must be freed at the end of usage by the procedure "FreeTestPattern()" to prevent the memory leakage.
+ * 
+ * @return "true" if the data was decoded successfully. "false" otherwise.
  */
-void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern);
+bool DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern);
+
 
 /**
  * @brief
@@ -252,7 +257,7 @@ void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **T
  *                      After freeing it will be set to NULL.
  *
  */
-void FreeTestPattern(uint8_t **TestPattern);
+//void FreeTestPattern(uint8_t **TestPattern);
 
 /**
  * @brief
@@ -272,6 +277,9 @@ void FreeTestPattern(uint8_t **TestPattern);
  */
 size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData);
 
+
+bool DecodeRespData(uint8_t Data[], size_t Len, TestResult_s *ResultData);
+
 /**
  * @brief
  * Frees the "**RespData" allocated by the procedure "EncodeRespData()".
@@ -285,7 +293,12 @@ size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData);
  * @param RespData  The pointer to pointer to the dynamically allocated memory for freeing. *
  *
  */
-void FreeRespData(uint8_t **RespData);
+//void FreeRespData(uint8_t **RespData);
+
+
+
+void FreeData(uint8_t **Data);
+
 
 /*======================================================================================================================*/
 

@@ -76,15 +76,17 @@ int SendCommandToNetwork(TestData_s const * const TestData, uint8_t TestPattern[
   StdErrNoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
   StdOutNoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
-  PackSizeNetto = sizeof(TestData_s) + TestData->Bit_Pattern_Length;
-  PackSizeFull = PackSizeNetto + CRC_SIZE;
-  Pack = calloc(PackSizeFull, sizeof(uint8_t));
-  if(Pack)
-   {
-    memcpy(Pack, TestData, sizeof(TestData_s));
-    memcpy(Pack + sizeof(TestData_s), TestPattern, TestData->Bit_Pattern_Length);
+  PackSizeFull = EncodeReqData(TestData, TestPattern, &Pack);
 
-    Add_CRC(Pack, PackSizeFull);
+  // PackSizeNetto = sizeof(TestData_s) + TestData->Bit_Pattern_Length;
+  // PackSizeFull = PackSizeNetto + CRC_SIZE;
+  // Pack = calloc(PackSizeFull, sizeof(uint8_t));
+  if(PackSizeFull > 0)//if(Pack)
+   {
+    // memcpy(Pack, TestData, sizeof(TestData_s));
+    // memcpy(Pack + sizeof(TestData_s), TestPattern, TestData->Bit_Pattern_Length);
+
+    // Add_CRC(Pack, PackSizeFull);
 
     result = sendto(sockfd, Pack, PackSizeFull, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
     if(result >= 0 )
@@ -144,12 +146,12 @@ int WaitForResponse(TestResult_s *ResultData, uint32_t TimeOut)
   ssize_t len = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len);
   if(len >= (ssize_t)MIN_RECV_MSG_SIZE)
    {
-    if(CRC_Correct(buffer, len))
+    if(DecodeRespData(buffer, len, ResultData))//if(CRC_Correct(buffer, len))
      {
       if(StdOutNoPiping)fprintf(stdout, "%s", TermGreen);
       printf("The message was received successfully.  %ld bytes were received.\n\r", len);
       if(StdOutNoPiping)fprintf(stdout, "%s", TermColorsReset);
-      memcpy(ResultData, buffer, sizeof(TestResult_s));
+      //memcpy(ResultData, buffer, sizeof(TestResult_s));
       return 0;
      }
     else

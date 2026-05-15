@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+
+
 /*======================================================================================================================*/
 
 char const * const ResultColors[] = {TermRed, TermGreen};
@@ -75,46 +77,65 @@ bool CRC_Correct(uint8_t buf[], size_t len)
  **          Encoding Decoding Data Functions / Procedures
  * *************************************************************************************************************
  */
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* This function encodes the packet received from network.                                                              */
+ssize_t EncodeReqData(TestData_s const * const TestData, uint8_t TestPattern[], uint8_t **ReqData)
+ {
+  
+  size_t PackSizeNetto, PackSizeFull;
+  PackSizeNetto = sizeof(TestData_s) + TestData->Bit_Pattern_Length;
+  PackSizeFull = PackSizeNetto + CRC_SIZE;
+  *ReqData = calloc(PackSizeFull, sizeof(uint8_t));
+  if(*ReqData)
+   {
+    memcpy(*ReqData, TestData, sizeof(TestData_s));
+    memcpy(*ReqData + sizeof(TestData_s), TestPattern, TestData->Bit_Pattern_Length);
+    Add_CRC(*ReqData, PackSizeFull);
+    return PackSizeFull;
+   }
+
+  return 0;
+ }
+
 /*----------------------------------------------------------------------------------------------------------------------*/
 /* This function decodes the packet received from network.                                                              */
 /* Attention !!!                                                                                                        */
 /* The last parameter "TestPattern" is given as pointer to pointer to dynamically allocated memory.                     */
 /* That means that at the end of the program it must be freed by the procedure "FreeTestPattern()"                      */
 /* to avoid the memory leakage.                                                                                         */
-void DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern)
+bool DecodeReqData(uint8_t Data[], size_t Len, TestData_s *TestData, uint8_t **TestPattern)
  {
-  uint8_t *Pack;
-  Pack = Data;
-
-  if(CRC_Correct(Pack, Len))
+  if(CRC_Correct(Data, Len))
    {
-    memcpy(TestData, Pack, sizeof(TestData_s));
+    memcpy(TestData, Data, sizeof(TestData_s));
 
     *TestPattern = calloc(TestData->Bit_Pattern_Length, sizeof(uint8_t));
     if(*TestPattern)
      {
-      memcpy(*TestPattern, Data+sizeof(TestData_s),TestData->Bit_Pattern_Length);
+      memcpy(*TestPattern, Data + sizeof(TestData_s),TestData->Bit_Pattern_Length);
 
       /* At the end of the usage with the returned data the "**TestPattern" must be freed by the "FreeTestPattern()" procedure. */
       /* free(*TestPattern); Not in use. the "**TestPattern" must be freed by the "FreeTestPattern()" procedure by the user. */
      }
+    return true;
    }
-
+  else
+   return false;
  }
 
 /*----------------------------------------------------------------------------------------------------------------------*/
 /* This Procedure is used for freeing the "**TestPattern" reserved by the procedure "DecodeReqData()".                  */
 /* No need to check anything before running it because it checks automatically inside if the memory                     */
 /* is reserved and sets the pointer to NULL after freeing it.                                                           */
-void FreeTestPattern(uint8_t **TestPattern)
- {
-  if(*TestPattern != NULL)
-   {
-    free(*TestPattern);
-    *TestPattern = NULL;
-   }
-
- }
+// void FreeTestPattern(uint8_t **TestPattern)
+//  {
+//   if(*TestPattern != NULL)
+//    {
+//     free(*TestPattern);
+//     *TestPattern = NULL;
+//    }
+//  }
 
 /*----------------------------------------------------------------------------------------------------------------------*/
 /* Encodes data for response to the parameter "**RespData".                                                             */
@@ -138,18 +159,40 @@ size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
  }
 
 /*----------------------------------------------------------------------------------------------------------------------*/
+/* Decodes data for response to the parameter "**ResultData".                                                             */
+bool DecodeRespData(uint8_t Data[], size_t Len, TestResult_s *ResultData)
+ {
+  if( (Len == sizeof(TestResult_s) + CRC_SIZE) && CRC_Correct(Data, Len) )  // Due to shortcirquit and method the function "CRC_Correct()" will not be done if the first condition is false in case of incorrect data length.
+   {
+    memcpy(ResultData, Data, sizeof(TestResult_s));
+    return true;
+   }
+  return false;
+ }
+
+/*----------------------------------------------------------------------------------------------------------------------*/
 /* Frees the "**RespData" allocated by the procedure "EncodeRespData()".                                                */
 /* No need to check the condition. It checks if the pointer is not NULL and only in this case it frees the memory.      */
 /* After freeng the memory it sets the pointer to NULL.                                                                 */
-void FreeRespData(uint8_t **RespData)
+// void FreeRespData(uint8_t **RespData)
+//  {
+//   if(*RespData != NULL)
+//    {
+//     free(*RespData);
+//     *RespData = NULL;
+//    }
+//  }
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+
+void FreeData(uint8_t **Data)
  {
-  if(*RespData != NULL)
+  if(*Data != NULL)
    {
-    free(*RespData);
-    *RespData = NULL;
+    free(*Data);
+    *Data = NULL;
    }
  }
-
 
 
 /*======================================================================================================================*/

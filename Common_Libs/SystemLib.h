@@ -187,9 +187,36 @@ ResetReason_e CheckResetReason();
 
 /*======================================================================================================================*/
 
+/**
+ * @brief Loads the program configuration saved in the flash memory.
+ *
+ * @code
+ * void LoadConf(void);
+ * @code
+ *
+ */
 void LoadConf(void);
 
+/**
+ * @brief Returns configuration saved in the flash memory.
+ *
+ * @code
+ * void GetBLConf(BL_Conf_s *BlConf);
+ * @code
+ *
+ * @param BlConf Pointer to memory where the configuration data will be copied.
+ */
 void GetBLConf(BL_Conf_s *BlConf);
+
+/**
+ * @brief Saves Configuration to the flash memory.
+ *
+ * @code
+ * void SetBLConf(BL_Conf_s BlConf);
+ * @code
+ *
+ * @param BlConf Configuration data that must be saved.
+ */
 void SetBLConf(BL_Conf_s BlConf);
 
 
