@@ -52,11 +52,6 @@ int main(int argc, char *argv[])
   
   //code
   srand(time(NULL));
-  // printf("printing arguments...\n\r");
-  // for(i = 0; i < argc; i++)
-  //  {
-  //   printf("%3d: %s\r\n", i, argv[i]);
-  //  }
   
   ArgResult = CheckArgs(argc, argv, &NInt, &PeriphBF);
   

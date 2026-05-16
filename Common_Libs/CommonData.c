@@ -175,9 +175,63 @@ void FreeData(uint8_t **Data)
    }
  }
 
-
 /*======================================================================================================================*/
 
+
+void MoveCursor(int x, int y)
+ {
+  printf("\033[%d;%dH", y, x); // Moves cursor to (x,y) place.
+ }
+
+
+
+void MoveCursFw(int x)
+ {
+  printf("\033[%dC", x);
+ }
+
+void MoveCursUp(int y)
+ {
+  printf("\033[%dA", y);
+ }
+
+void MoveCursBw(int x)
+ {
+  printf("\033[%dD", x);
+ }
+
+void MoveCursDn(int y)
+ {
+  printf("\033[%dB", y);
+ }
+
+void MoveCursToCol(int col)
+ {
+  printf("\033[%dG", col);
+ }
+
+void ClearLine(LnPrt_e lp)
+ {
+  printf("\033[%dK", lp);
+ }
+
+void PrintHorizScale(uint16_t ScaleLength, uint16_t FilledLen, char *Colors[], char *Symbols[])
+ {
+  uint16_t i;
+  bool d;
+  // MoveCursToCol(1);
+  // ClearLine(E_FULL_LINE);
+  for(i = 0; i < ScaleLength; i++)
+   {
+    d = (i < FilledLen);
+    printf("%s%s%s", Colors[d], Symbols[d], TermColorsReset);
+   }
+  fflush(stdout);
+
+ }
+
+
+/*======================================================================================================================*/
 
 
 //  ₙⁿ𐄁 ⁰¹²³⁴⁵⁶⁷⁸  ₀₁₂₃₄₅₆₇₈₉  ⩽⩾

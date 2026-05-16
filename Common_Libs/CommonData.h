@@ -338,5 +338,32 @@ CommandTypes_e;
 
 /*======================================================================================================================*/
 
+void MoveCursor(int x, int y);
+
+
+
+void MoveCursFw(int x);
+
+void MoveCursUp(int y);
+
+void MoveCursBw(int x);
+
+void MoveCursDn(int y);
+
+void MoveCursToCol(int col);
+
+typedef enum LnPrt_e
+ {
+  E_CURS_TO_END,
+  E_CURS_TO_BEG,
+  E_FULL_LINE
+ }LnPrt_e;
+
+void ClearLine(LnPrt_e lp);
+
+void PrintHorizScale(uint16_t ScaleLength, uint16_t FilledLen, char *Colors[], char *Symbols[]);
+
+/*======================================================================================================================*/
+
 #endif  //  ____CommonData_h__
 

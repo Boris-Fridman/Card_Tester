@@ -14,9 +14,22 @@
  * int InitNetwork();
  * @code
  * 
- * @return "0" The network was opened successfully. "-1" If the openning failed.
+ * @return "0" The network was opened successfully. "-1" If the required device wasn't detected. "-2" if Shocked could not be opened.
  */
 int InitNetwork();
+
+/**
+ * @brief Opens the network according the given host address.
+ * 
+ * @code 
+ * int OpenSocketInNetwork(struct hostent *host);
+ * @code
+ * 
+ * @param host Invormation of specific device for opening the hsot socket for connecting to this device.
+ * 
+ * @return "0" The socket was opened successfully. "-2" If failed.
+ */
+int OpenSocketInNetwork(struct hostent *host);  /* Is used in InitNetwork. */
 
 /**
  * @brief Closes network.
