@@ -146,7 +146,7 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
 void ReqDevForMakingReset()
  {
 /*  ---------------------------------------------------  */
-  InitNetwork();
+  InitNetwork(HOST_NAME);
   SendCommandToNetwork(&ResetCondition, NULL);
   //WaitForResponse(&ResultData, TimeOut);
   CloseNetwork();
@@ -176,7 +176,7 @@ int ReqDevForMakingTest(int NInt, PeriphBitField_s PeriphBF)
   PrintPreperedData(&TestData, TestPattern);
   
 /*  ---------------------------------------------------  */
-  InitNetwork();
+  InitNetwork(HOST_NAME);
   SendCommandToNetwork(&TestData, TestPattern);
   NetResult = WaitForResponse(&ResultData, TimeOut);
   CloseNetwork();
@@ -331,14 +331,25 @@ void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPatt
   printf("\n\r");
  }
 
+void AddEmptySpaces(uint8_t NSpaces)
+ {
+  uint8_t j;
+  for(j = 0; j < NSpaces; j++)
+    {
+     printf(" ");
+    }
+
+ }
+
 void PrintTestResults(TestResult_s const * const TestInfo)
  {
-  uint8_t i, j;
+  uint8_t i;
   uint8_t Devs, Results;
   bool TRes;
   uint8_t MaxNameLen;
   bool NoPiping;
   NoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
+  char const FinResMsg[] = {"Final Result"};
 
   printf("The test Results:\n\r");
   printf("Test ID: %d\n\r", TestInfo->Test_ID);
@@ -346,40 +357,35 @@ void PrintTestResults(TestResult_s const * const TestInfo)
   Devs = *(uint8_t *)&TestInfo->Periph_B_F;
   Results = *(uint8_t *)&TestInfo->Results_B_F;
   
-  
   for(i = 0, MaxNameLen = 0; i < E_NUM_PERIPHS; i++)
    {
     MaxNameLen = MAX(MaxNameLen, strlen(PeriphNames[i]));
    }
-
+  MaxNameLen = MAX(MaxNameLen, strlen(FinResMsg));
+  ++MaxNameLen;
   printf("The tested devices:\n\r");
   for(i = 0; i < E_NUM_PERIPHS; i++)
    {
     if(Devs & (1<<i))
      {
       if(NoPiping)printf(DevsColor);
-      printf("%s:    ", PeriphNames[i]);
+      printf("%s:", PeriphNames[i]);
       if(NoPiping)printf(TermColorsReset);
-      //printf("%s%s:    %s", DevsColor, PeriphNames[i], TermColorsReset);
-      for(j = 0; j < (MaxNameLen - strlen(PeriphNames[i])); j++)
-       {
-        printf(" ");
-       }
+      AddEmptySpaces(MaxNameLen - strlen(PeriphNames[i]));
       TRes = Results  & (1<<i);
       if(NoPiping)printf("%s", ResultColors[TRes]);
       printf("%s\n\r", ResultMessages[TRes]);
       if(NoPiping)printf(TermColorsReset);
-      //printf("%s%s%s\n\r", ResultColors[TRes], ResultMessages[TRes], TermColorsReset);
      }
    }
   TRes = TestInfo->TestResult == E_TEST_SUCCEEDED;
   
-  printf("The final Result: ");  
+  printf("%s:", FinResMsg);  
+  AddEmptySpaces(MaxNameLen - strlen(FinResMsg));
   if(NoPiping)printf("%s", ResultColors[TRes]);
   printf("%s", ResultMessages[TRes]);  
   if(NoPiping)printf(TermColorsReset);
   printf("\n\r");  
-  //printf("The final Result: %s%s%s\n\r", ResultColors[TRes], ResultMessages[TRes], TermColorsReset);  
  }
 
 void ConvertTime(time_t const * const TimeToConvert, char TimeAsStr[], size_t TimeStrSize)

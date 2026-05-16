@@ -8,8 +8,11 @@
 #include "Network.h"
 #include "string.h"
 #include "ProgImage.h"
+#include <netdb.h>
 
 /*======================================================================================================================*/
+
+#define DEV_REBOOT_TIME   10  /* The reboot time of the device for waiting. */
 
 #define ARG_ERROR_RESULT -1
 #define ARG_BURN_RESULT   0
@@ -22,7 +25,7 @@ int CheckArgs(int argc, char *argv[], char ImageFullPathName[]);
 void PrintHelpMessage(char *ProgName);
 void PrintErrorMessage(int argc, char *argv[]);
 int ReqDevForBurning(char ImageFullPathName[]);
-void ReqDevForMakingReset();
+int ReqDevForMakingReset();
 
 /*======================================================================================================================*/
 
@@ -109,7 +112,51 @@ void PrintErrorMessage(int argc, char *argv[])
 int ReqDevForBurning(char ImageFullPathName[])
  {
   int Result = 0;
-  Result = InitNetwork();
+  bool StdErrNoPiping, StdOutNoPiping;
+  StdErrNoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
+  StdOutNoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
+
+  Result = InitNetwork(BL_HOST_NAME);
+  if(Result == -1) /* Bootloader not detected. */
+   {
+    Result = ReqDevForMakingReset();
+    if(Result == 0) /* Device Itself was found.*/
+     {
+      int i;
+      if(StdOutNoPiping)
+       {
+        char *ScaleSymbs[] = {"░", "▓"}; // ░▒▓
+        char *ScaleColors[] = {TermCyan, TermRed};
+
+        for(i = 0; i < DEV_REBOOT_TIME; i++)
+         {
+          MoveCursToCol(1);
+          PrintHorizScale(DEV_REBOOT_TIME, i, ScaleColors, ScaleSymbs);
+          sleep(1);
+         }
+        MoveCursToCol(1);         
+        ClearLine(E_FULL_LINE);
+       }
+      else
+       {
+        sleep(DEV_REBOOT_TIME);
+       }
+      printf("Retrying... \n\r");
+      Result = InitNetwork(BL_HOST_NAME);
+     }
+    if(Result == 0)
+     {
+      if(StdOutNoPiping)fprintf(stdout, TermGreen);
+      fprintf(stdout, "The device restarted successfully.\n\r");
+      if(StdOutNoPiping)fprintf(stdout, TermColorsReset);
+     }
+    else
+     {
+      if(StdErrNoPiping)fprintf(stderr, TermRed);
+      fprintf(stderr, "Cannot restart the device to the bootloader mode. try to restart it manually.\n\r");
+      if(StdErrNoPiping)fprintf(stderr, TermColorsReset);
+     }
+   }
   if(Result == 0)
    {
     InitImage(ImageFullPathName);
@@ -117,15 +164,24 @@ int ReqDevForBurning(char ImageFullPathName[])
     CloseImage();
     CloseNetwork();
    }
+  else
+   {
+
+   }
   return Result;
  } 
 
- void ReqDevForMakingReset()
+ int ReqDevForMakingReset()
  {
+  int Result;
 /*  ---------------------------------------------------  */
-  InitNetwork();
-  SendCommandToNetwork(&ResetCondition, NULL);
-  //WaitForResponse(&ResultData, TimeOut);
-  CloseNetwork();
+  Result = InitNetwork(HOST_NAME);
+  if(Result == 0)
+   {
+    SendCommandToNetwork(&ResetCondition, NULL);
+    //WaitForResponse(&ResultData, TimeOut);
+    CloseNetwork();
+   }
 /*  ---------------------------------------------------  */
+  return Result;
  }

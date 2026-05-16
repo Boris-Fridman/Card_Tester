@@ -18,15 +18,14 @@ static int sockfd;
  */
 /*----------------------------------------------------------------------------------------------------------------------*/
 /*  Initilizes the network.                                                                                             */
-int InitNetwork()
+int InitNetwork(char HostName[])
  {
   bool NoPiping;
   struct hostent *host;
-  int Result;
 
   NoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
 
-  host = gethostbyname(HOST_NAME);
+  host = gethostbyname(HostName);
   if(host == NULL)
    {
     if(NoPiping)fprintf(stderr, TermRed);
@@ -36,18 +35,6 @@ int InitNetwork()
     return -1;
    }
 
-  Result = OpenSocketInNetwork(host);
-
-  return Result;
- }
-
-/*----------------------------------------------------------------------------------------------------------------------*/
-/*  Opens the network according the given host address.                                                                 */
-int OpenSocketInNetwork(struct hostent *host)
- {
-  bool NoPiping;
-  NoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
-  
   // Create a UDP socket
   if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
    {

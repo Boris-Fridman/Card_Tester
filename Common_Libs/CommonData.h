@@ -15,16 +15,7 @@
  * The information about colors can be found in the sine:
  * https://en.wikipedia.org/wiki/ANSI_escape_code
  */
-#define TermBlack         "\033[20m"
-#define TermDarkRed       "\033[21m"
-#define TermDarkGreen     "\033[22m"
-#define TermDarkYello     "\033[23m"
-#define TermDarkBlue      "\033[24m"
-#define TermDarkMagenta   "\033[25m"
-#define TermDarkCyan      "\033[26m"
-#define TermGrayL         "\033[27m"    //  "Dark White"   (Gray 90  According to site https://github.com/ThomasDickey/xterm-snapshots/blob/master/XTerm-col.ad)
-
-#define TermGrayD         "\033[30m"    //  "Light Black"  (Gray 50  According to site https://github.com/ThomasDickey/xterm-snapshots/blob/master/XTerm-col.ad)
+#define TermBlack         "\033[30m"
 #define TermRed           "\033[31m"
 #define TermGreen         "\033[32m"
 #define TermYello         "\033[33m"

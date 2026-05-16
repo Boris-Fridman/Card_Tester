@@ -8,12 +8,8 @@
 #include <unistd.h>
 
 /*======================================================================================================================*/
-#define DEV_REBOOT_TIME   10  /* The reboot time of the device for waiting. */
-/*======================================================================================================================*/
 static struct sockaddr_in dest_addr;
 static int sockfd;
-static bool BootloaderFound = false;
-static bool UUTProgramFound = false;
 /*======================================================================================================================*/
 /*
  * *************************************************************************************************************
@@ -22,92 +18,23 @@ static bool UUTProgramFound = false;
  */
 /*----------------------------------------------------------------------------------------------------------------------*/
 /*  Initilizes the network (uses by the function "OpenSocketInNetwork()").                                              */
-int InitNetwork()
- {
-  bool StdErrNoPiping, StdOutNoPiping;
-  struct hostent *host;
-  int Result;
-  size_t i;
-
-  StdErrNoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
-  StdOutNoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
-
-  host = gethostbyname(BL_HOST_NAME);  /* Trying to detect the hostname of bootloader. */
-  if(host == NULL)                     /* No bootloader found. */
-   {
-    host = gethostbyname(DESTIN_IP);   /* Trlying to detect the hostname of the main program itself. (To decide if to send an error or to reboot the device to bootloader mode by sending the soft reset. to it.) */
-    if(host == NULL)                   /* No UUT_Program itself found too. */
-     {
-      if(StdErrNoPiping)fprintf(stderr, TermRed);
-      //fprintf(stderr, "Cannot detect host address from the name.\n\r");
-      perror("Cannot detect host address from the name.");
-      if(StdErrNoPiping)fprintf(stderr, TermColorsReset);
-      return -1;
-     }
-    else /* UUT_Program was found instead. */
-     UUTProgramFound = true;
-   }
-  else /* Bootloader was found itself. */
-   BootloaderFound = true;
-
-  Result = OpenSocketInNetwork(host);
-
-  if((Result == 0) && UUTProgramFound)
-   {
-    printf("The UUT Device was found in the network.\n\rRestarting it to bootloader mode....\n\rPlease wait %d seconds.\n\r", DEV_REBOOT_TIME);
-    SendCommandToNetwork(&ResetCondition, NULL);
-    CloseNetwork();
-    do
-     {
-      /* code */
-      if(StdOutNoPiping)
-       {
-        char *ScaleSymbs[] = {"░", "▓"}; // ░▒▓
-        char *ScaleColors[] = {TermCyan, TermRed};
-
-        for(i = 0; i < DEV_REBOOT_TIME; i++)
-         {
-          MoveCursToCol(1);
-          PrintHorizScale(DEV_REBOOT_TIME, i, ScaleColors, ScaleSymbs);
-          sleep(1);
-         }
-        MoveCursToCol(1);         
-        ClearLine(E_FULL_LINE);
-       }
-      else
-       {
-        sleep(DEV_REBOOT_TIME);
-       }
-      printf("Retrying... \n\r");
-      Result = OpenSocketInNetwork(host);
-     } 
-    while (Result != 0);
-    host = gethostbyname(BL_HOST_NAME);  /* Trying to detect the hostname of bootloader. */
-    if(host == NULL)
-     {
-      if(StdErrNoPiping)fprintf(stderr, TermRed);
-      fprintf(stderr, "Cannot restart the device to the bootloader mode. try to restart it manually.\n\r");
-      if(StdErrNoPiping)fprintf(stderr, TermColorsReset);
-      CloseNetwork();
-      Result = -3;
-     }
-    else
-     {
-      if(StdOutNoPiping)fprintf(stdout, TermGreen);
-      fprintf(stdout, "The device restarted successfully.\n\r");
-      if(StdOutNoPiping)fprintf(stdout, TermColorsReset);
-     }
-   }
-  return Result;
- }
-
-/*----------------------------------------------------------------------------------------------------------------------*/
-/*  Opens the network according the given host address.                                                                 */
-int OpenSocketInNetwork(struct hostent *host)
+int InitNetwork(char HostName[])
  {
   bool NoPiping;
+  struct hostent *host;
+
   NoPiping = isatty(STDERR_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
-  
+
+  host = gethostbyname(HostName);
+  if(host == NULL)
+   {
+    if(NoPiping)fprintf(stderr, TermRed);
+    //fprintf(stderr, "Cannot detect host address from the name.\n\r");
+    perror("Cannot detect host address from the name.");
+    if(NoPiping)fprintf(stderr, TermColorsReset);
+    return -1;
+   }
+
   // Create a UDP socket
   if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
    {
