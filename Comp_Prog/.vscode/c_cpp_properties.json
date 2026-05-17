@@ -4,9 +4,10 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/../Common_Libs"
+                "${workspaceFolder}/../Common_Libs",
+                "${workspaceFolder}/../Common_Libs/LinuxSpecific"
             ],
-            "defines": ["_POSIX_C_SOURCE = 1"],
+            "defines": ["_POSIX_C_SOURCE = 1", "NET_PRINT_ERRORS", "NET_PRINT_SUCCESS"],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++17",

@@ -352,7 +352,7 @@ typedef enum LnPrt_e
 
 void ClearLine(LnPrt_e lp);
 
-void PrintHorizScale(uint16_t ScaleLength, uint16_t FilledLen, char *Colors[], char *Symbols[]);
+void PrintHorizScale(uint32_t ScaleLength, uint32_t FilledLen, char *Colors[], char *Symbols[], uint32_t MaxValue, uint32_t Value, char uints[]);
 
 /*======================================================================================================================*/
 

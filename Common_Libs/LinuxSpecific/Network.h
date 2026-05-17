@@ -6,9 +6,17 @@
 #include "CommonData.h"
 
 /*======================================================================================================================*/
+/* Pringitng results definitions from the network library.                                                              */
+/* To enable printing just uncomment one or both of them or add to the debugger configuration as golobal definitions.   */
+/* Attention !!! Because this library is common for testing and bootloader  programms                                   */
+/*               and in testing program the outputs are needed while in bootloader are not                              */
+/*               these definitions are allready defined as global in testing program compiler configuration only.       */
+// #define NET_PRINT_ERRORS      /*  The library will print the errors if enabled.     */
+// #define NET_PRINT_SUCCESS     /*  The library will print the successes if enabled.  */
+/*======================================================================================================================*/
 
 /**
- * @brief Initilizes the network (uses by the function "OpenSocketInNetwork()"). 
+ * @brief Initilizes the network.
  * 
  * @param HostName  Name of device detected in DHCP Network.
  * 
@@ -38,9 +46,9 @@ void CloseNetwork();
  * int SendCommandToNetwork(TestData_s const * const TestData, uint8_t TestPattern[]);
  * @code
  * 
- * @param TestData The data containing commad information and the information about data segment if it sent with the command.
+ * @param TestData The data containing information about the test type.
  * 
- * @param TestPattern The segmetn of the update image that must be burned to the flash memory. Or NULL if no segment exist in command. 
+ * @param TestPattern The array of bytes that must be sent via UART, SPI or I2C peripherals if they exist. Or NULL if no Pattern exist in command. 
  * 
  * @return "0" if the sending succeeded, "-1" if the sending failed or "-2" if the memory allocation failed.
  */

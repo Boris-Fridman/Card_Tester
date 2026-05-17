@@ -1,5 +1,5 @@
+"./Common_Libs/ARMSpecific/SystemLib.o"
 "./Common_Libs/CommonData.o"
-"./Common_Libs/SystemLib.o"
 "./Core/Src/adc.o"
 "./Core/Src/crc.o"
 "./Core/Src/dac.o"

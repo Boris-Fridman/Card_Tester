@@ -87,6 +87,7 @@ int SendImageToNetwork()
   uint32_t StartOffsAddr = 0;
   uint32_t ScaleLength = 100;  // Will be in the future adjusted to screen size.
   uint32_t DoneScaleLength = 0;
+  uint32_t Percents = 0;
   bool NoPiping;
   NoPiping = isatty(STDOUT_FILENO); /* Checking if the output is not redirected to any other program or file to decide if to use colors or not. */
   if(FileIsOpen)
@@ -112,7 +113,6 @@ int SendImageToNetwork()
       WaitForResponse(&Result, 0);
       StartOffsAddr += NumReadBytes;
       NumSentBytes += NumReadBytes;
-      DoneScaleLength = DIV_RND(ScaleLength * NumSentBytes, FileSize);
       if(FileSize) /* File size was detected*/
        {
         if(NoPiping)
@@ -120,8 +120,9 @@ int SendImageToNetwork()
           ioctl(STDOUT_FILENO, TIOCGWINSZ, &SizeOfWindow);  // Can be explained in the site "https://www.qnx.com/developers/docs/8.0/com.qnx.doc.neutrino.lib_ref/topic/i/ioctl.html".
           ScaleLength = DIV_RND(SizeOfWindow.ws_col * 4 , 5);
           DoneScaleLength = DIV_RND(ScaleLength * NumSentBytes, FileSize);
+          Percents = DIV_RND(100 * NumSentBytes, FileSize);
           MoveCursToCol(1);
-          PrintHorizScale(ScaleLength, DoneScaleLength, ScaleColors, ScaleSymbs);
+          PrintHorizScale(ScaleLength, DoneScaleLength, ScaleColors, ScaleSymbs, 100, Percents, "%");
          }
         else
          {

@@ -36,4 +36,14 @@
 			<location>/home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/Common_Libs</location>
 		</link>
 	</linkedResources>
+	<filteredResources>
+		<filter>
+			<id>1779020679996</id>
+			<name>Common_Libs/LinuxSpecific</name>
+			<type>14</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+			</matcher>
+		</filter>
+	</filteredResources>
 </projectDescription>

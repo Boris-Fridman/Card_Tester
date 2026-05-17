@@ -28,6 +28,7 @@
                 "-D_POSIX_C_SOURCE = 1",
 
                 "${workspaceFolder}/../Common_Libs/CommonData.c",
+                "${workspaceFolder}/../Common_Libs/LinuxSpecific/Network.c",
 
 //                "${fileDirname}/*.c",
 
@@ -38,6 +39,7 @@
                 // Include Directories
                 "-I${workspaceFolder}",
                 "-I${workspaceFolder}/../Common_Libs",
+                "-I${workspaceFolder}/../Common_Libs/LinuxSpecific",
                 
                 //link math lib:
                 "-lm",

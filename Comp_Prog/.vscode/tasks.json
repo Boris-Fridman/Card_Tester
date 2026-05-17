@@ -28,8 +28,11 @@
                 //workaround printf fix for older gcc compilers on Windows:
                 //"-D __USE_MINGW_ANSI_STDIO",
                 "-D_POSIX_C_SOURCE = 1",
+                "-DNET_PRINT_ERRORS",
+                "-DNET_PRINT_SUCCESS",
 
                 "${workspaceFolder}/../Common_Libs/CommonData.c",
+                "${workspaceFolder}/../Common_Libs/LinuxSpecific/Network.c",
 
                 "${fileDirname}/*.c",
                 // "sqlite3.c",
@@ -42,6 +45,7 @@
                 // Include Directories
                 "-I${workspaceFolder}",
                 "-I${workspaceFolder}/../Common_Libs",
+                "-I${workspaceFolder}/../Common_Libs/LinuxSpecific",
 
                 //link math lib:
                 "-lm",

@@ -215,17 +215,27 @@ void ClearLine(LnPrt_e lp)
   printf("\033[%dK", lp);
  }
 
-void PrintHorizScale(uint16_t ScaleLength, uint16_t FilledLen, char *Colors[], char *Symbols[])
+void PrintHorizScale(uint32_t ScaleLength, uint32_t FilledLen, char *Colors[], char *Symbols[], uint32_t MaxValue, uint32_t Value, char uints[])
  {
-  uint16_t i;
+  uint32_t i;
+  uint32_t PermLen;
+  char buf[20], b[10];
   bool d;
   // MoveCursToCol(1);
   // ClearLine(E_FULL_LINE);
-  for(i = 0; i < ScaleLength; i++)
-   {
-    d = (i < FilledLen);
-    printf("%s%s%s", Colors[d], Symbols[d], TermColorsReset);
-   }
+  snprintf(buf, sizeof(buf), "%d", MaxValue);
+  snprintf(b, sizeof(b), " %%%dd%%s ", strlen(buf));
+  snprintf(buf, sizeof(buf), b, Value, uints);
+  printf("%s%s",Colors[1], buf);
+  //fflush(stdout);
+  PermLen = ScaleLength - strlen(buf);
+  if(PermLen)
+   for(i = 0; i < ScaleLength; i++)
+    {
+     d = (i < FilledLen);
+     printf("%s%s%s", Colors[d], Symbols[d], TermColorsReset);
+     //fflush(stdout);
+    }
   fflush(stdout);
 
  }

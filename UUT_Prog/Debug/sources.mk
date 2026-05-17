@@ -22,6 +22,7 @@ C_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
+Common_Libs/ARMSpecific \
 Common_Libs \
 Core/Src \
 Core/Startup \

@@ -1,7 +1,0 @@
-/home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/Common_Libs/SystemLib.c:105:5:_write	2
-/home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/Common_Libs/SystemLib.c:128:6:AdjustIntVectTable	1
-/home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/Common_Libs/SystemLib.c:154:15:CheckResetReason	6
-/home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/Common_Libs/SystemLib.c:182:6:LoadConf	1
-/home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/Common_Libs/SystemLib.c:189:6:SaveConf	7
-/home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/Common_Libs/SystemLib.c:254:6:GetBLConf	1
-/home/boris/Documents/RealTimeColedge/ARM_Embedded_Systems/Card_Tester/Common_Libs/SystemLib.c:262:6:SetBLConf	1

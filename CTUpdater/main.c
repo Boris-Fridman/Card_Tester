@@ -131,7 +131,7 @@ int ReqDevForBurning(char ImageFullPathName[])
         for(i = 0; i < DEV_REBOOT_TIME; i++)
          {
           MoveCursToCol(1);
-          PrintHorizScale(DEV_REBOOT_TIME, i, ScaleColors, ScaleSymbs);
+          PrintHorizScale(DEV_REBOOT_TIME, i, ScaleColors, ScaleSymbs, DEV_REBOOT_TIME, DEV_REBOOT_TIME - i, "");
           sleep(1);
          }
         MoveCursToCol(1);         
