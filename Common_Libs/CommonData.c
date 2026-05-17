@@ -224,7 +224,7 @@ void PrintHorizScale(uint32_t ScaleLength, uint32_t FilledLen, char *Colors[], c
   // MoveCursToCol(1);
   // ClearLine(E_FULL_LINE);
   snprintf(buf, sizeof(buf), "%d", MaxValue);
-  snprintf(b, sizeof(b), " %%%dd%%s ", strlen(buf));
+  snprintf(b, sizeof(b), " %%%dd%%s ", (uint8_t)strlen(buf));
   snprintf(buf, sizeof(buf), b, Value, uints);
   printf("%s%s",Colors[1], buf);
   //fflush(stdout);

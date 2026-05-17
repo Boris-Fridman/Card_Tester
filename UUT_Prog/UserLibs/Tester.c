@@ -41,6 +41,11 @@
 #define TEST_REQ_QUEUE_LEN     5                                          /* Length of the queue of requests from the main-test-task to the single-dev-test-task. */
 #define TEST_RESP_QUEUE_LEN   (DEV_TEST_QUEUE_LEN * E_NUM_PERIPHS)        /* Length of the queue of responses from the single-dev-test-task to the main-test-task. */
 
+#define MessColor   TermBrightBlue
+#define DevsColor   TermYello
+#define ValuesColor TermMagenta
+#define UnitsColor  TermCyan
+
 
 /*----------------------------------------------------------------------------------------------------------------------*/
 
@@ -141,6 +146,9 @@ void MakeTest(DevTestInfo_s *DevTestInfo, PeriphBitField_s Periph_B_F);
 /*  Forwards the request to selected peripheral.                                                                        */
 void ReqDevTest(DevTestInfo_s *DevTestInfo, PeriphType_e PeriphType);
 
+/*  Prints Test Information: Number of interations , Requested devices for test and optionally:                         */
+/*  Test Pattern for ports , Test Voltage for ADC and Test Time for Timer                                               */
+void PrintTestInfo(TestData_s TestData, uint8_t TestPattern[]);
 
 /*======================================================================================================================*/
 /*
@@ -196,9 +204,11 @@ void TesterTask(void *pvParameters)
      {
       if(!memcmp(&ReqMsg.TestData, &ResetCondition, sizeof(TestData_s)))
        {
+    	rtprintf("%sRestarting the device...%s\n\r", TermYello, TermColorsReset);
         __HAL_RCC_CLEAR_RESET_FLAGS();  // Clearing all reset flags before making reset to ensure that the bootloader will detect the correct reset reason.
         NVIC_SystemReset();             // Resetting Device.
        }
+      PrintTestInfo(ReqMsg.TestData, ReqMsg.TestPattern);
       memset(&DevResults, 0, sizeof(DevResults));
       memset(&RespondedDevs, 0, sizeof(RespondedDevs));
       DevTestInfo.Bit_Pattern_Length = ReqMsg.TestData.Bit_Pattern_Length;
@@ -720,9 +730,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
  **          Common Devices Test Functions
  * *************************************************************************************************************
 */
-#define DevsColor   TermBlue //TermYello
-#define ValuesColor TermMagenta
-#define UnitsColor  TermCyan
 
 /*
  * void DevTestTask(void *pvParameters)
@@ -750,28 +757,28 @@ void DevTestTask(void *pvParameters)
    {
     if(pdPASS == xQueueReceive(DevTaskParams->DevTestQue, &Message, portMAX_DELAY))
      {
-#ifdef DEBUG
-      rtprintf("\n\r%sStarting %s Test...%s\n\r", TermBlue, PeriphNames[DevTaskParams->PeriphType], TermColorsReset);
-      switch(DevTaskParams->PeriphType)
-       {
-        case E_UART:
-        case E_SPI:
-        case E_I2C:
-          rtprintf("%sThe test pattern is: %s0x%s", TermBlue, ValuesColor,TermColorsReset);
-          for(i = 0; i < Message.TestInfo->Bit_Pattern_Length; i++)
-           rtprintf("%s%02X%s", ValuesColor, Message.TestInfo->TestPattern[i], TermColorsReset);
-          rtprintf("\n\r");
-         break;
-        case E_ADC:
-          rtprintf("%sThe voltage is: %s%d%smV%s\n\r", TermBlue, ValuesColor, Message.TestInfo->TestVoltage, UnitsColor, TermColorsReset);
-         break;
-        case E_TIMER:
-          rtprintf("%sThe time is: %s%d%sms%s\n\r", TermBlue, ValuesColor, Message.TestInfo->TestTime, UnitsColor, TermColorsReset);
-         break;
-        default:
-         break;
-       }
-#endif
+//#ifdef DEBUG
+//      rtprintf("\n\r%sStarting %s Test...%s\n\r", MessColor, PeriphNames[DevTaskParams->PeriphType], TermColorsReset);
+//      switch(DevTaskParams->PeriphType)
+//       {
+//        case E_UART:
+//        case E_SPI:
+//        case E_I2C:
+//          rtprintf("%sThe test pattern is: %s0x%s", MessColor, ValuesColor,TermColorsReset);
+//          for(i = 0; i < Message.TestInfo->Bit_Pattern_Length; i++)
+//           rtprintf("%s%02X%s", ValuesColor, Message.TestInfo->TestPattern[i], TermColorsReset);
+//          rtprintf("\n\r");
+//         break;
+//        case E_ADC:
+//          rtprintf("%sThe voltage is: %s%d%smV%s\n\r", MessColor, ValuesColor, Message.TestInfo->TestVoltage, UnitsColor, TermColorsReset);
+//         break;
+//        case E_TIMER:
+//          rtprintf("%sThe time is: %s%d%sms%s\n\r", MessColor, ValuesColor, Message.TestInfo->TestTime, UnitsColor, TermColorsReset);
+//         break;
+//        default:
+//         break;
+//       }
+//#endif
       switch(DevTaskParams->PeriphType)
        {
         case E_UART:
@@ -793,7 +800,7 @@ void DevTestTask(void *pvParameters)
           Result = false;
          break;
        }
-      rtprintf("\n\r%sThe %s Test %s%s%s\n\r", TermBlue, PeriphNames[DevTaskParams->PeriphType], ResultColors[Result], ResultMessages[Result], TermColorsReset);
+      rtprintf("\n\r%sThe %s%s%s Test %s%s%s\n\r", MessColor, DevsColor, PeriphNames[DevTaskParams->PeriphType], MessColor,ResultColors[Result], ResultMessages[Result], TermColorsReset);
       SendTestResponse(Result, DevTaskParams->PeriphType);
      }
      vTaskDelay(pdMS_TO_TICKS(1));
@@ -920,6 +927,87 @@ void TesterInit()
 
  }
 
+/*======================================================================================================================*/
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints Test pattern for UART, SPI and/or I2C if anyone of them is requested for test.                               */
+void PrintPattern(uint32_t Len, uint8_t Pattern[])
+ {
+  uint32_t i;
+  rtprintf("%sThe test pattern is: %s0x%s", MessColor, ValuesColor,TermColorsReset);
+  for(i = 0; i < Len; i++)
+   rtprintf("%s%02X%s", ValuesColor, Pattern[i], TermColorsReset);
+  rtprintf("\n\r");
 
+ }
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints the voltage for ADC if the ADC is requested for test.                                                        */
+void PrintVoltage(int32_t TestVoltage)
+ {
+  rtprintf("%sThe voltage is: %s%d%smV%s\n\r", MessColor, ValuesColor, TestVoltage, UnitsColor, TermColorsReset);
+ }
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints the time for timer if the timer is requested for test.                                                       */
+void PrintTime(uint32_t TestTime)
+ {
+  rtprintf("%sThe time is: %s%d%sms%s\n\r", MessColor, ValuesColor, TestTime, UnitsColor, TermColorsReset);
+ }
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints the peripherals are requested for test.                                                                      */
+void PrintPeripherals(PeriphBitField_s SelectedPeripherals)
+ {
+  PeriphType_e i;
+  bool FirstDevPrinted = false;
+  rtprintf("%sThe devices under test: %s", MessColor, TermColorsReset);
+  for(i = 0, FirstDevPrinted = false; i < E_NUM_PERIPHS; ++i)
+   {
+    if( ( (*(uint8_t*)&SelectedPeripherals) >> i) & 0x01 )
+     {
+      if(i > 0)
+       {
+        rtprintf("%s,%s ", MessColor, TermColorsReset);
+       }
+      rtprintf("%s%s%s", DevsColor, PeriphNames[i], TermColorsReset);
+      FirstDevPrinted = true;
+     }
+   }
+  rtprintf("%s.%s\n\r", MessColor, TermColorsReset);
+ }
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints number of times the requested devices must be tested                                                         */
+void PrintNumInterations(uint8_t Num_Interations)
+ {
+  rtprintf("%sThe number of interations is: %s%d%s\n\r", MessColor, UnitsColor, Num_Interations, TermColorsReset);
+ }
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints Test Information: Number of interations , Requested devices for test and optionally:                         */
+/*  Test Pattern for ports , Test Voltage for ADC and Test Time for Timer                                               */
+void PrintTestInfo(TestData_s TestData, uint8_t TestPattern[])
+ {
+  uint8_t Periph;
+  Periph = (*(uint8_t*)&TestData.Periph_B_F);
+
+  PrintPeripherals(TestData.Periph_B_F);
+  PrintNumInterations(TestData.Num_Interations);
+
+  if( Periph & ( UART_Flag | SPI_Flag | I2C_Flag ) )
+   {
+    PrintPattern(TestData.Bit_Pattern_Length , TestPattern);
+   }
+  if( Periph | ADC_Flag)
+   {
+    PrintVoltage(TestData.TestVoltage);
+   }
+  if( Periph | Timer_Flag)
+   {
+    PrintTime(TestData.TestTime);
+   }
+ }
+
+/*======================================================================================================================*/
 

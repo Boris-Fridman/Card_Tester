@@ -15,14 +15,45 @@
  * The information about colors can be found in the sine:
  * https://en.wikipedia.org/wiki/ANSI_escape_code
  */
-#define TermBlack         "\033[30m"
-#define TermRed           "\033[31m"
-#define TermGreen         "\033[32m"
-#define TermYello         "\033[33m"
-#define TermBlue          "\033[34m"
-#define TermMagenta       "\033[35m"
-#define TermCyan          "\033[36m"
-#define TermWhite         "\033[37m"
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Foreground Colors                                                                                                   */
+#define TermBlack           "\033[30m"
+#define TermRed             "\033[31m"
+#define TermGreen           "\033[32m"
+#define TermYello           "\033[33m"
+#define TermBlue            "\033[34m"
+#define TermMagenta         "\033[35m"
+#define TermCyan            "\033[36m"
+#define TermWhite           "\033[37m"  /* (Light Gray) */
+
+#define TermBrightBlack     "\033[90m"  /* (Dark Gray)  */
+#define TermBrightRed       "\033[91m"
+#define TermBrightGreen     "\033[92m"
+#define TermBrightYello     "\033[93m"
+#define TermBrightBlue      "\033[94m"
+#define TermBrightMagenta   "\033[95m"
+#define TermBrightCyan      "\033[96m"
+#define TermBrightWhite     "\033[97m"
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Background Colors                                                                                                   */
+#define TermBGBlack         "\033[40m"
+#define TermBGRed           "\033[41m"
+#define TermBGGreen         "\033[42m"
+#define TermBGYello         "\033[43m"
+#define TermBGBlue          "\033[44m"
+#define TermBGMagenta       "\033[45m"
+#define TermBGCyan          "\033[46m"
+#define TermBGWhite         "\033[47m"   /* (Light Gray) */
+
+#define TermBGBrightBlack   "\033[100m"  /* (Dark Gray)  */
+#define TermBGBrightRed     "\033[101m"
+#define TermBGBrightGreen   "\033[102m"
+#define TermBGBrightYello   "\033[103m"
+#define TermBGBrightBlue    "\033[104m"
+#define TermBGBrightMagenta "\033[105m"
+#define TermBGBrightCyan    "\033[106m"
+#define TermBGBrightWhite   "\033[107m"
 
 #define TermColorsReset   "\033[39;49m"
 
