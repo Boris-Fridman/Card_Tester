@@ -28,13 +28,20 @@ void PrintErrorMessage(int argc, char *argv[]);
 int CheckArgs(int argc, char *argv[], int *NInt, PeriphBitField_s *BFResult);
 void ReqDevForMakingReset(void);
 int ReqDevForMakingTest(int NInt, PeriphBitField_s PeriphBF);
-void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, uint32_t NInt, uint32_t TestID);
-void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPattern[]);
+void PrepareData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, uint32_t NInt, uint32_t TestID);
+void PrintPreparedData(TestData_s const * const TestData, uint8_t const TestPattern[]);
 void PrintTestResults(TestResult_s const * const TestInfo);
 void ConvertTime(time_t const * const TimeToConvert, char TimeAsStr[], size_t TimeStrSize);
 
 /*======================================================================================================================*/
 
+/*
+ * *************************************************************************************************************
+ **          Main Function from which the program starts running. 
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Main function from which the program starts running.                                                                */
 int main(int argc, char *argv[])
  {
   int NInt;
@@ -77,6 +84,13 @@ int main(int argc, char *argv[])
 
 /*======================================================================================================================*/
 
+/*
+ * *************************************************************************************************************
+ **          Additional functions called from main function. 
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Function checking arguments given to the program.                                                                   */
 int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
  {
   int i;
@@ -142,7 +156,8 @@ int CheckArgs(int argc, char *argv[], int *NInt,PeriphBitField_s *BFResult)
 
   return ARG_TEST_RESULT;
  }
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Requests the network device to make a reset.                                                                        */
 void ReqDevForMakingReset()
  {
 /*  ---------------------------------------------------  */
@@ -153,6 +168,8 @@ void ReqDevForMakingReset()
 /*  ---------------------------------------------------  */
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Requests the network device to test peripherals.                                                                    */
 int ReqDevForMakingTest(int NInt, PeriphBitField_s PeriphBF)
  {
   int TestID;
@@ -172,8 +189,8 @@ int ReqDevForMakingTest(int NInt, PeriphBitField_s PeriphBF)
   TestID++;
   time(&CurrentTime);
   ConvertTime(&CurrentTime, timebuf,sizeof(timebuf));
-  PrepereData(&TestData, TestPattern, &TimeOut, PeriphBF, NInt, TestID);
-  PrintPreperedData(&TestData, TestPattern);
+  PrepareData(&TestData, TestPattern, &TimeOut, PeriphBF, NInt, TestID);
+  PrintPreparedData(&TestData, TestPattern);
   
 /*  ---------------------------------------------------  */
   InitNetwork(HOST_NAME);
@@ -190,6 +207,8 @@ int ReqDevForMakingTest(int NInt, PeriphBitField_s PeriphBF)
   return 0;
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints on the screen a help message.                                                                                */
 void PrintHelpMessage(char *ProgName)
  {
   char *fname = basename(ProgName);
@@ -205,6 +224,8 @@ void PrintHelpMessage(char *ProgName)
   printf("Or to type h to see the help message.\n\r\n\r");
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints on the screen an error message.                                                                              */
 void PrintErrorMessage(int argc, char *argv[])
  {
   UNUSED(argc);
@@ -212,7 +233,9 @@ void PrintErrorMessage(int argc, char *argv[])
   PrintHelpMessage(argv[0]);
  }
 
-void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, uint32_t NInt, uint32_t TestID)
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prepares data according to the test options for sending to the network device                                       */
+void PrepareData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut, PeriphBitField_s PeriphBF, uint32_t NInt, uint32_t TestID)
  {
   uint32_t MinFreq, MaxAddDelay = 0;
 
@@ -260,8 +283,9 @@ void PrepereData(TestData_s *TestData, uint8_t TestPattern[], uint32_t *TimeOut,
 
  }
 
-
-void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPattern[])
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints the information about the test that the user selected.                                                       */
+void PrintPreparedData(TestData_s const * const TestData, uint8_t const TestPattern[])
  {
   uint8_t i;
   uint8_t Devs;
@@ -331,6 +355,8 @@ void PrintPreperedData(TestData_s const * const TestData, uint8_t const TestPatt
   printf("\n\r");
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Addes empty spces to the end of the string to make the printed lines in similar length to make the output nicer.    */
 void AddEmptySpaces(uint8_t NSpaces)
  {
   uint8_t j;
@@ -341,6 +367,8 @@ void AddEmptySpaces(uint8_t NSpaces)
 
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints results of the requested test after it was finished.                                                         */
 void PrintTestResults(TestResult_s const * const TestInfo)
  {
   uint8_t i;
@@ -388,6 +416,8 @@ void PrintTestResults(TestResult_s const * const TestInfo)
   printf("\n\r");  
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Converts time to required format to add it to the database.                                                         */
 void ConvertTime(time_t const * const TimeToConvert, char TimeAsStr[], size_t TimeStrSize)
  {
   struct tm tmp;

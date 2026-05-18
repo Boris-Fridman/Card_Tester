@@ -29,6 +29,13 @@ int ReqDevForMakingReset();
 
 /*======================================================================================================================*/
 
+/*
+ * *************************************************************************************************************
+ **          Main Function from which the program starts running. 
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Main function from which the program starts running.                                                                */
 int main(int argc, char *argv[])
  {
   int ArgResult;
@@ -72,6 +79,13 @@ int main(int argc, char *argv[])
 
 /*======================================================================================================================*/
 
+/*
+ * *************************************************************************************************************
+ **          Additional functions called from main function. 
+ * *************************************************************************************************************
+ */
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Function checking arguments given to the program.                                                                   */
 int CheckArgs(int argc, char *argv[], char ImageFullPathName[])
  {
   int i;
@@ -90,8 +104,8 @@ int CheckArgs(int argc, char *argv[], char ImageFullPathName[])
   return ARG_BURN_RESULT;
  }
 
-
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints on the screen a help message.                                                                                */
  void PrintHelpMessage(char *ProgName)
   {
    char *fname = basename(ProgName);
@@ -100,7 +114,8 @@ int CheckArgs(int argc, char *argv[], char ImageFullPathName[])
    printf("Or to type h to see the help message.\n\r\n\r");
   }
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Prints on the screen an error message.                                                                              */
 void PrintErrorMessage(int argc, char *argv[])
  {
   UNUSED(argc);
@@ -108,7 +123,8 @@ void PrintErrorMessage(int argc, char *argv[])
   PrintHelpMessage(argv[0]);
  }
 
-
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Requests the network device to unlock its flash, sends the image for burning and requests device to lock the flash. */
 int ReqDevForBurning(char ImageFullPathName[])
  {
   int Result = 0;
@@ -171,6 +187,8 @@ int ReqDevForBurning(char ImageFullPathName[])
   return Result;
  } 
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*  Requests the network device to make a reset.                                                                        */
  int ReqDevForMakingReset()
  {
   int Result;

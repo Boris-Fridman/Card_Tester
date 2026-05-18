@@ -88,7 +88,6 @@
 /**
  * Test data definitions
  */
-
 #define MAX_POSSIBLE_FREAUENCY  1000000000  /* Hz */      /* Maximal possible frequency used for calculation maximal timeout */
 #define MIN_I2C_FREQUENCY       100000      /* Hz */
 #define MIN_SPI_FREQUENCY       200000      /* Hz */
@@ -118,6 +117,22 @@
 
 
 /*======================================================================================================================*/
+
+#define START_FLASH_ADDRESS   0x08000000
+#define START_PROG_OFFSET     0x20000  // 0x00000    0x08000 0x10000 0x18000   0x20000  0x40000   0x80000   0xC0000
+#define START_PROG_ADDRESS    (START_FLASH_ADDRESS + START_PROG_OFFSET)
+
+/*======================================================================================================================*/
+
+
+typedef enum CommandTypes_e
+ {
+  OTA_START = 0x01,
+  OTA_DATA  = 0x02,
+  OTA_END   = 0x03
+ }
+CommandTypes_e;
+
 
 typedef enum __attribute__((__packed__)) PeriphType_e  // The attribute "__attribute__((__packed__))" is defined to make the enumeration to be in one byte to ensure the correct data length while sending. 
  {
@@ -164,8 +179,17 @@ typedef struct __attribute__((packed)) TestResult_s /* The attribute "__attribut
   uint32_t Test_ID;              /* In case of OTA Update is used as start address in flash of code segment. */
   PeriphBitField_s Periph_B_F;
   PeriphBitField_s Results_B_F;
-  TestResType_e TestResult;      /* In case of OTA Update is used for signalize if the burning was success of failed. */
+  TestResType_e TestResult;      /* In case of OTA Update is used for signalizing if the burning was success of failed. */
  }TestResult_s;
+
+typedef enum LnPrt_e
+ {
+  E_CURS_TO_END,
+  E_CURS_TO_BEG,
+  E_FULL_LINE
+ }LnPrt_e;
+
+/*======================================================================================================================*/
 
 #define Timer_Flag (1 << E_TIMER)
 #define UART_Flag  (1 << E_UART)
@@ -182,9 +206,6 @@ extern char const * const ResultMessages[]; /* Messages for showing result: [0] 
 extern char const * const PeriphNames[E_NUM_PERIPHS]; /* Names for peripherals that the card can test. */
 
 extern TestData_s const ResetCondition;  /* Is used for making reset to the board card. */
-
-/*======================================================================================================================*/
-
 
 /*======================================================================================================================*/
 
@@ -231,7 +252,7 @@ void Add_CRC(uint8_t buf[], size_t len);
  *
  * @param len   The length of data. Including CRC.
  *              For example if the given length is 12 the CRC checking will be made from the first 8 bytes
- *              and the result will be compaired to the last 4 bytes.
+ *              and the result will be compared to the last 4 bytes.
  *
  */
 bool CRC_Correct(uint8_t buf[], size_t len);
@@ -255,10 +276,10 @@ bool CRC_Correct(uint8_t buf[], size_t len);
  *
  * @param TestPattern  The pointer to the test pattern that must be added to the data of NULL if the pattern doesn't exist.
  *
- * @param ReqData      The pointer to pointer to the encoded data thet will be set to the new reserved memory to which the data will be copied.
+ * @param ReqData      The pointer to pointer to the encoded data that will be set to the new reserved memory to which the data will be copied.
  *                     Must be freed at the end of usage by the procedure "FreeData()" to prevent the memory leakage.
  *
- * @return             Thelength of data if encoded successfully or "0" if failed.
+ * @return             The length of data if encoded successfully or "0" if failed.
  */
 ssize_t EncodeReqData(TestData_s const * const TestData, uint8_t TestPattern[], uint8_t **ReqData);
 
@@ -319,19 +340,18 @@ size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData);
  *
  * @param Len          The length of the data.
  * 
- * @param ResultData   The pointer in memory for decoded data. The memory must be allready reserved.
+ * @param ResultData   The pointer in memory for decoded data. The memory must be already reserved.
  * 
  * @return             "true" if success or "false" if failed.
  */
 bool DecodeRespData(uint8_t Data[], size_t Len, TestResult_s *ResultData);
 
 
-
 /**
  * @brief
  * Frees the "**Data" allocated by by one of the procedures "DecodeReqData()", "DecodeReqData()" or "EncodeReqData()". 
  * No need to check the condition. It checks if the pointer is not NULL and only in this case it frees the memory.
- * After freeng the memory it sets the pointer to NULL.
+ * After freeing the memory it sets the pointer to NULL.
  *
  * @code
  * void FreeData(uint8_t **Data);
@@ -342,48 +362,82 @@ bool DecodeRespData(uint8_t Data[], size_t Len, TestResult_s *ResultData);
 void FreeData(uint8_t **Data);
 
 
-/*======================================================================================================================*/
 
-#define START_FLASH_ADDRESS   0x08000000
-#define START_PROG_OFFSET     0x20000  // 0x00000    0x08000 0x10000 0x18000   0x20000  0x40000   0x80000   0xC0000
-#define START_PROG_ADDRESS    (START_FLASH_ADDRESS + START_PROG_OFFSET)
-
-
-
-typedef enum CommandTypes_e
- {
-  OTA_START = 0x01,
-  OTA_DATA  = 0x02,
-  OTA_END   = 0x03
- }
-CommandTypes_e;
 
 /*======================================================================================================================*/
 
+/**
+ * @brief Set cursor to defined place in the screen. 
+ * 
+ * @param x Number of the column.
+ * 
+ * @param y Number of the row.
+ */
 void MoveCursor(int x, int y);
 
 
-
+/**
+ * @brief Moves cursor forward.
+ * 
+ * @param x Number steps to move.
+ */
 void MoveCursFw(int x);
 
+/**
+ * @brief Moves cursor Up.
+ * 
+ * @param y Number of steps to move.
+ */
 void MoveCursUp(int y);
 
+
+/**
+ * @brief Moves cursor backward.
+ * 
+ * @param x Number of steps to move.
+ */
 void MoveCursBw(int x);
 
+/**
+ * @brief Moves cursor down.
+ * 
+ * @param Number of steps to move.
+ */
 void MoveCursDn(int y);
 
+/**
+ * @brief Sets cursor place in the line were it exists.
+ * 
+ * @param col x-position in line where the cursor must be put.
+ */
 void MoveCursToCol(int col);
 
-typedef enum LnPrt_e
- {
-  E_CURS_TO_END,
-  E_CURS_TO_BEG,
-  E_FULL_LINE
- }LnPrt_e;
-
+/**
+ * @brief Clears line in console.
+ * 
+ * @param lp The type of cleaning: after cursor, before cursor or all the line from beginning to end.
+ */
 void ClearLine(LnPrt_e lp);
 
-void PrintHorizScale(uint32_t ScaleLength, uint32_t FilledLen, char *Colors[], char *Symbols[], uint32_t MaxValue, uint32_t Value, char uints[]);
+
+/**
+ * @brief Prints horizontal scale bar in the cursor place
+ * 
+ * @param ScaleLength Total length of the scale including number. (A part of the length will be taken by the number.)
+ * 
+ * @param FilledLen   The part of the scale-bar that is filled.
+ * 
+ * @param Colors      The filled part of the bar and empty part of the bar colors.
+ * 
+ * @param Symbols     The symbols from which is built a filled and the empty parts
+ * 
+ * @param MaxValue    The biggest number shown in the scale.
+ * 
+ * @param Value       The value shown in the scale.
+ * 
+ * @param Units       The units that are shown in the scale right after value.
+ */
+void PrintHorizScale(uint32_t ScaleLength, uint32_t FilledLen, char *Colors[], char *Symbols[], uint32_t MaxValue, uint32_t Value, char Units[]);
 
 /*======================================================================================================================*/
 

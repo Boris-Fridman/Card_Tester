@@ -52,7 +52,7 @@ static volatile bool BurnEnded = false;
 /*   Burns the received segment.                                                                                        */
 void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnResult)
  {
-  HAL_StatusTypeDef Result;
+  HAL_StatusTypeDef Result = HAL_ERROR;
   uint8_t LastBLSector;
   uint8_t SectorForErasing;
   FLASH_EraseInitTypeDef pEraseInit = {0};
@@ -121,7 +121,7 @@ void BurnData(TestData_s CodeSegInfo, uint8_t CodeSegment[], TestResult_s *BurnR
 /*  Burns segment of the given data to the given address at the given length. */
 HAL_StatusTypeDef ProgSegment(uint32_t StartAddress, uint8_t Segment[], uint8_t Length)
  {
-  HAL_StatusTypeDef Result;
+  HAL_StatusTypeDef Result = HAL_ERROR;
   uint8_t i;
   uint8_t StartPart;
   uint8_t NumParts;

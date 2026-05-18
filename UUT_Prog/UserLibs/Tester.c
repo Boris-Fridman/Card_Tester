@@ -750,35 +750,10 @@ void DevTestTask(void *pvParameters)
   DevTaskParams_s *DevTaskParams = pvParameters;
   DevTestMesg_s Message;
   bool Result = false;
-#ifdef DEBUG
-  int i;
-#endif
   for(;;)
    {
     if(pdPASS == xQueueReceive(DevTaskParams->DevTestQue, &Message, portMAX_DELAY))
      {
-//#ifdef DEBUG
-//      rtprintf("\n\r%sStarting %s Test...%s\n\r", MessColor, PeriphNames[DevTaskParams->PeriphType], TermColorsReset);
-//      switch(DevTaskParams->PeriphType)
-//       {
-//        case E_UART:
-//        case E_SPI:
-//        case E_I2C:
-//          rtprintf("%sThe test pattern is: %s0x%s", MessColor, ValuesColor,TermColorsReset);
-//          for(i = 0; i < Message.TestInfo->Bit_Pattern_Length; i++)
-//           rtprintf("%s%02X%s", ValuesColor, Message.TestInfo->TestPattern[i], TermColorsReset);
-//          rtprintf("\n\r");
-//         break;
-//        case E_ADC:
-//          rtprintf("%sThe voltage is: %s%d%smV%s\n\r", MessColor, ValuesColor, Message.TestInfo->TestVoltage, UnitsColor, TermColorsReset);
-//         break;
-//        case E_TIMER:
-//          rtprintf("%sThe time is: %s%d%sms%s\n\r", MessColor, ValuesColor, Message.TestInfo->TestTime, UnitsColor, TermColorsReset);
-//         break;
-//        default:
-//         break;
-//       }
-//#endif
       switch(DevTaskParams->PeriphType)
        {
         case E_UART:
@@ -966,7 +941,7 @@ void PrintPeripherals(PeriphBitField_s SelectedPeripherals)
    {
     if( ( (*(uint8_t*)&SelectedPeripherals) >> i) & 0x01 )
      {
-      if(i > 0)
+      if((i > 0) && FirstDevPrinted)
        {
         rtprintf("%s,%s ", MessColor, TermColorsReset);
        }

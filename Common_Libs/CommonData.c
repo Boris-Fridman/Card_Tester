@@ -63,7 +63,7 @@ void Add_CRC(uint8_t buf[], size_t len)
 /*----------------------------------------------------------------------------------------------------------------------*/
 /*  Checks if the CRC is correct.                                                                                       */
 /*  For example if the given length is 12 the CRC checking will be made from the first 8 bytes                          */
-/*  and the result will be compaired to the last 4 bytes.                                                               */
+/*  and the result will be compared to the last 4 bytes.                                                                */
 bool CRC_Correct(uint8_t buf[], size_t len)
  {
   uint32_t CalcCRC, RecvCRC;
@@ -150,7 +150,7 @@ size_t EncodeRespData(TestResult_s *TestResult, uint8_t **RespData)
  }
 
 /*----------------------------------------------------------------------------------------------------------------------*/
-/* Decodes data for response to the parameter "**ResultData".                                                             */
+/* Decodes data for response to the parameter "**ResultData".                                                           */
 bool DecodeRespData(uint8_t Data[], size_t Len, TestResult_s *ResultData)
  {
   if( (Len == sizeof(TestResult_s) + CRC_SIZE) && CRC_Correct(Data, Len) )  // Due to shortcirquit and method the function "CRC_Correct()" will not be done if the first condition is false in case of incorrect data length.
@@ -177,7 +177,14 @@ void FreeData(uint8_t **Data)
 
 /*======================================================================================================================*/
 
+/*
+ * *************************************************************************************************************
+ **          CRC Console controlling Procedures.
+ * *************************************************************************************************************
+ */
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Set cursor to defined place in the screen.                                                                           */
 void MoveCursor(int x, int y)
  {
   printf("\033[%d;%dH", y, x); // Moves cursor to (x,y) place.
@@ -185,56 +192,70 @@ void MoveCursor(int x, int y)
 
 
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Moves cursor forward.                                                                                                */
 void MoveCursFw(int x)
  {
   printf("\033[%dC", x);
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Moves cursor Up.                                                                                                     */
 void MoveCursUp(int y)
  {
   printf("\033[%dA", y);
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Moves cursor backward.                                                                                               */
 void MoveCursBw(int x)
  {
   printf("\033[%dD", x);
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Moves cursor down.                                                                                                   */
 void MoveCursDn(int y)
  {
   printf("\033[%dB", y);
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Sets cursor place in the line were it exists.                                                                        */
 void MoveCursToCol(int col)
  {
   printf("\033[%dG", col);
  }
 
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Clears line in console.                                                                                              */
 void ClearLine(LnPrt_e lp)
  {
   printf("\033[%dK", lp);
  }
 
-void PrintHorizScale(uint32_t ScaleLength, uint32_t FilledLen, char *Colors[], char *Symbols[], uint32_t MaxValue, uint32_t Value, char uints[])
+/*----------------------------------------------------------------------------------------------------------------------*/
+/* Prints horizontal scale bar.                                                                                         */
+void PrintHorizScale(uint32_t ScaleLength, uint32_t FilledLen, char *Colors[], char *Symbols[], uint32_t MaxValue, uint32_t Value, char Units[])
  {
   uint32_t i;
   uint32_t PermLen;
   char buf[20], b[10];
   bool d;
-  // MoveCursToCol(1);
-  // ClearLine(E_FULL_LINE);
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(__linux__)
   snprintf(buf, sizeof(buf), "%d", MaxValue);
+#else  
+  snprintf(buf, sizeof(buf), "%ld", MaxValue);
+#endif
   snprintf(b, sizeof(b), " %%%dd%%s ", (uint8_t)strlen(buf));
-  snprintf(buf, sizeof(buf), b, Value, uints);
+  snprintf(buf, sizeof(buf), b, Value, Units);
   printf("%s%s",Colors[1], buf);
-  //fflush(stdout);
   PermLen = ScaleLength - strlen(buf);
   if(PermLen)
    for(i = 0; i < ScaleLength; i++)
     {
      d = (i < FilledLen);
      printf("%s%s%s", Colors[d], Symbols[d], TermColorsReset);
-     //fflush(stdout);
     }
   fflush(stdout);
 
@@ -242,6 +263,13 @@ void PrintHorizScale(uint32_t ScaleLength, uint32_t FilledLen, char *Colors[], c
 
 
 /*======================================================================================================================*/
+
+#if defined(A) //defined(__x86_64__) || defined(_M_X64)
+voit ttt()
+ {
+
+ }
+#endif
 
 
 //  ₙⁿ𐄁 ⁰¹²³⁴⁵⁶⁷⁸  ₀₁₂₃₄₅₆₇₈₉  ⩽⩾

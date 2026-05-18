@@ -126,17 +126,6 @@ int GetLastTestIDFromDataBase(sqlite3 **conn)
         if(valtoret != SQLITE_OK){PrintDBError(valtoret);break;}
         valtoret = sqlite3_bind_int (stmt, 3, test_result                 );
         if(valtoret != SQLITE_OK){PrintDBError(valtoret);break;}
-       //  snprintf(buf, sizeof(buf)-1, "INSERT INTO TESTS_RESULTS(test_id) VALUES(%d);"
-       //                               "INSERT INTO TESTS_RESULTS(date_time) VALUES(%s);"
-       //                               "INSERT INTO TESTS_RESULTS(test_result) VALUES(%d);",
-       //           test_id, date_time,(int)test_result);
-     
-     
-       //  snprintf(buf, sizeof(buf)-1, "INSERT INTO TESTS_RESULTS(test_id, date_time, test_result) VALUES(%d, %s, %d);",
-       //           test_id, date_time,(int)test_result);
-     
-       // result = sqlite3_exec(*conn, buf, 0, 0, &err_msg);
-     
        sqlite3_step(stmt);
        valtoret = sqlite3_finalize(stmt);
        if(valtoret != SQLITE_OK){PrintDBError(valtoret);break;}

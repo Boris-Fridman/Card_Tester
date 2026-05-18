@@ -12,8 +12,6 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 
-
-
 #include "CommonData.h"
 #include "Network.h"
 
